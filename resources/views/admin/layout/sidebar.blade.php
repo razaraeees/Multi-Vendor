@@ -86,7 +86,7 @@
                 <a href="{{ url('admin/admins/admin') }}" class="submenu-item {{ Session::get('page') == 'view_admins' ? 'active' : '' }}">Admins</a>
                 <a href="{{ url('admin/admins/subadmin') }}" class="submenu-item {{ Session::get('page') == 'view_subadmins' ? 'active' : '' }}">Sub Admins</a>
                 <a href="{{ url('admin/admins/vendor') }}" class="submenu-item {{ Session::get('page') == 'view_vendors' ? 'active' : '' }}">Vendors</a>
-                <a href="{{ url('admin/admins/all') }}" class="submenu-item {{ Session::get('page') == 'view_all' ? 'active' : '' }}">All Admins</a>
+                <a href="{{ url('admin/admins') }}" class="submenu-item {{ Session::get('page') == 'view_all' ? 'active' : '' }}">All Admins</a>
             </div>
         @endif
 

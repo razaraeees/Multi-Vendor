@@ -1,226 +1,521 @@
 @extends('admin.layout.layout')
 
-
 @section('content')
-    <div class="main-panel">
-        <div class="content-wrapper">
-            <div class="row">
-                <div class="col-md-12 grid-margin">
-                    <div class="row">
-                        <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                            <h4 class="card-title">Products</h4>
-                        </div>
-                        <div class="col-12 col-xl-4">
-                            <div class="justify-content-end d-flex">
-                                <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                    <button class="btn btn-sm btn-light bg-white dropdown-toggle" type="button" id="dropdownMenuDate2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                                    <i class="mdi mdi-calendar"></i> Today (10 Jan 2021)
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuDate2">
-                                        <a class="dropdown-item" href="#">January - March</a>
-                                        <a class="dropdown-item" href="#">March - June</a>
-                                        <a class="dropdown-item" href="#">June - August</a>
-                                        <a class="dropdown-item" href="#">August - November</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Products Management</h1>
+        <div class="page-actions">
+            <a href="{{ url('admin/add-edit-product') }}" class="btn btn-primary">
+                <i class="fas fa-arrow"></i> Back to listing
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (Session::has('success_message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success:</strong> {{ Session::get('success_message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if (Session::has('error_message'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> {{ Session::get('error_message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Please fix the following errors:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Product Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-box me-2"></i> Product Information</h5>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 grid-margin stretch-card">
-                    <div class="card">
-                        <div class="card-body">
-                            <h4 class="card-title">{{ $title }}</h4>
+                <div class="card-body">
+                    <form class="forms-sample"
+                        @if (empty($product['id'])) action="{{ url('admin/add-edit-product') }}" 
+                          @else action="{{ url('admin/add-edit-product/' . $product['id']) }}" @endif
+                        method="post" enctype="multipart/form-data">
+                        @csrf
 
-
-                            {{-- Our Bootstrap error code in case of wrong current password or the new password and confirm password are not matching: --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            @if (Session::has('error_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <strong>Error:</strong> {{ Session::get('error_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-
-
-
-                            {{-- Displaying Laravel Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors --}}    
-                            @if ($errors->any())
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-
-
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-
-
-
-                            {{-- Displaying The Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors AND https://laravel.com/docs/9.x/blade#validation-errors --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            {{-- Our Bootstrap success message in case of updating admin password is successful: --}}
-                            @if (Session::has('success_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>Success:</strong> {{ Session::get('success_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-                
-
-                            
-
-
-                            
-                            <form class="forms-sample"   @if (empty($product['id'])) action="{{ url('admin/add-edit-product') }}" @else action="{{ url('admin/add-edit-product/' . $product['id']) }}" @endif   method="post" enctype="multipart/form-data">  <!-- If the id is not passed in from the route, this measn 'Add a new Product', but if the id is passed in from the route, this means 'Edit the Product' --> <!-- Using the enctype="multipart/form-data" to allow uploading files (images) -->
-                                @csrf
-
-
-                                
-                                <div class="form-group">
-                                    <label for="category_id">Select Category</label>
-                                    {{-- <input type="text" class="form-control" id="category_id" placeholder="Enter Category Name" name="category_id" @if (!empty($product['name'])) value="{{ $product['category_id'] }}" @else value="{{ old('category_id') }}" @endif>  --}} {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                    <select name="category_id" id="category_id" class="form-control text-dark">
+                        <div class="row">
+                            <!-- Category Selection -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
+                                    <label for="category_id" class="fw-bold">Select Category</label>
+                                    <select name="category_id" id="category_id"
+                                        class="form-control shadow-sm border-primary @error('category_id') is-invalid @enderror"
+                                        required>
                                         <option value="">Select Category</option>
-                                        @foreach ($categories as $section) {{-- $categories are ALL the `sections` with their related 'parent' categories (if any (if exist)) and their subcategories or `child` categories (if any (if exist)) --}} {{-- Check ProductsController.php --}}
-                                            <optgroup label="{{ $section['name'] }}"> {{-- sections --}}
-                                                @foreach ($section['categories'] as $category) {{-- parent categories --}} {{-- Check ProductsController.php --}}
-                                                    <option value="{{ $category['id'] }}" @if (!empty($product['category_id'] == $category['id'])) selected @endif>{{ $category['category_name'] }}</option> {{-- parent categories --}}
-                                                    @foreach ($category['sub_categories'] as $subcategory) {{-- subcategories or child categories --}} {{-- Check ProductsController.php --}}
-                                                        <option value="{{ $subcategory['id'] }}" @if (!empty($product['category_id'] == $subcategory['id'])) selected @endif>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;{{ $subcategory['category_name'] }}</option> {{-- subcategories or child categories --}}
+                                        @foreach ($categories as $section)
+                                            <optgroup label="{{ $section['name'] }}">
+                                                @foreach ($section['categories'] as $category)
+                                                    <option value="{{ $category['id'] }}"
+                                                        {{ !empty($product['category_id']) && $product['category_id'] == $category['id'] ? 'selected' : '' }}>
+                                                        {{ $category['category_name'] }}
+                                                    </option>
+                                                    @foreach ($category['sub_categories'] as $subcategory)
+                                                        <option value="{{ $subcategory['id'] }}"
+                                                            {{ !empty($product['category_id']) && $product['category_id'] == $subcategory['id'] ? 'selected' : '' }}>
+                                                            &nbsp;&nbsp;&nbsp;-- {{ $subcategory['category_name'] }}
+                                                        </option>
                                                     @endforeach
                                                 @endforeach
                                             </optgroup>
                                         @endforeach
-                                        {{-- <option value="{{ $category['id'] }}" @if (!empty($product['category_id']) && $product['category_id'] == $category['id']) selected @endif >{{ $category['name'] }}</option> --}}
                                     </select>
+                                    @error('category_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
+                            </div>
 
-
-
-                                {{-- Including the related filters <select> box of a product DEPENDING ON THE SELECTED CATEGORY of the product --}} 
-                                <div class="loadFilters">
-                                    @include('admin.filters.category_filters')
-                                </div>
-
-
-
-                                <div class="form-group">
+                            <!-- Brand Selection -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
                                     <label for="brand_id">Select Brand</label>
-                                    <select name="brand_id" id="brand_id" class="form-control text-dark">
+                                    <select name="brand_id" id="brand_id"
+                                        class="form-control @error('brand_id') is-invalid @enderror">
                                         <option value="">Select Brand</option>
                                         @foreach ($brands as $brand)
-                                            <option value="{{ $brand['id'] }}" @if (!empty($product['brand_id'] == $brand['id'])) selected @endif>{{ $brand['name'] }}</option>
+                                            <option value="{{ $brand['id'] }}"
+                                                {{ !empty($product['brand_id']) && $product['brand_id'] == $brand['id'] ? 'selected' : '' }}>
+                                                {{ $brand['name'] }}
+                                            </option>
                                         @endforeach
                                     </select>
+                                    @error('brand_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="form-group">
-                                    <label for="product_name">Product Name</label>
-                                    <input type="text" class="form-control" id="product_name" placeholder="Enter Product Name" name="product_name" @if (!empty($product['product_name'])) value="{{ $product['product_name'] }}" @else value="{{ old('product_name') }}" @endif>  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_code">Product Code</label>
-                                    <input type="text" class="form-control" id="product_code" placeholder="Enter Code" name="product_code" @if (!empty($product['product_code'])) value="{{ $product['product_code'] }}" @else value="{{ old('product_code') }}" @endif>  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_color">Product Color</label>
-                                    <input type="text" class="form-control" id="product_color" placeholder="Enter Product Color" name="product_color" @if (!empty($product['product_color'])) value="{{ $product['product_color'] }}" @else value="{{ old('product_color') }}" @endif>  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_price">Product Price</label>
-                                    <input type="text" class="form-control" id="product_price" placeholder="Enter Product Price" name="product_price" @if (!empty($product['product_price'])) value="{{ $product['product_price'] }}" @else value="{{ old('product_price') }}" @endif> {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_discount">Product Discount (%)</label>
-                                    <input type="text" class="form-control" id="product_discount" placeholder="Enter Product Discount" name="product_discount" @if (!empty($product['product_discount'])) value="{{ $product['product_discount'] }}" @else value="{{ old('product_discount') }}" @endif> {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_weight">Product Weight (%)</label>
-                                    <input type="text" class="form-control" id="product_weight" placeholder="Enter Product Weight" name="product_weight" @if (!empty($product['product_weight'])) value="{{ $product['product_weight'] }}" @else value="{{ old('product_weight') }}" @endif> {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-
-
-
-                                {{-- Managing Product Colors (in front/products/detail.blade.php) --}} 
-                                <div class="form-group">
-                                    <label for="group_code">Group Code</label>
-                                    <input type="text" class="form-control" id="group_code" placeholder="Enter Group Code" name="group_code"  @if (!empty($product['group_code'])) value="{{ $product['group_code'] }}" @else value="{{ old('group_code') }}" @endif> {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-
-
-
-                                <div class="form-group">
-                                    <label for="product_image">Product Image (Recommended Size: 1000x1000)</label> {{-- Important Note: There are going to be 3 three sizes for the product image: Admin will upload the image with the recommended size which 1000*1000 which is the 'large' size (will store it in 'large' folder), but then we're going to use 'Intervention' package to get another two sizes: 500*500 which is the 'medium' size (will store it in 'medium' folder) and 250*250 which is the 'small' size (will store it in 'small' folder) --}}
-                                    <input type="file" class="form-control" id="product_image" name="product_image">
-                                    {{-- Show the admin image if exists --}}
-
-
-
-
-                                    {{-- Show the product image, if any (if exits) --}}
-                                    @if (!empty($product['product_image']))
-                                        <a target="_blank" href="{{ url('front/images/product_images/large/' . $product['product_image']) }}">View Product Image</a>&nbsp;|&nbsp; {{-- Showing the 'large' image inside the 'large' folder --}}
-                                        <a href="JavaScript:void(0)" class="confirmDelete" module="product-image" moduleid="{{ $product['id'] }}">Delete Product Image</a> {{-- Delete the product image from BOTH SERVER (FILESYSTEM) & DATABASE --}}    {{-- Check admin/js/custom.js and web.php (routes) --}}
-                                    @endif
-                                </div>
-                                <div class="form-group">
-                                    <label for="product_video">Product Video (Recommended Size: Less than 2 MB)</label> {{-- Important Note: Default php.ini file upload Maximum file size is 2MB (If you upload a file with a larger size, it won't be uploaded!). Check upload_max_filesize using phpinfo() method --}}
-                                    <input type="file" class="form-control" id="product_video" name="product_video">
-                                    {{-- Show the admin image if exists --}}
-
-
-
-
-                                    {{-- Show the product video, if any (if exits) --}}
-                                    @if (!empty($product['product_video']))
-                                        <a target="_blank" href="{{ url('front/videos/product_videos/' . $product['product_video']) }}">View Product Video</a>&nbsp;|&nbsp;
-                                        <a href="JavaScript:void(0)" class="confirmDelete" module="product-video" moduleid="{{ $product['id'] }}">Delete Product Video</a> {{-- Delete the product video from BOTH SERVER (FILESYSTEM) & DATABASE --}}    {{-- Check admin/js/custom.js and web.php (routes) --}}
-                                    @endif
-                                </div>
-                                <div class="form-group">
-                                    <label for="description">Product Description</label>
-                                    <textarea name="description" id="description" class="form-control" rows="3">{{ $product['description'] }}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="meta_title">Meta Title</label>
-                                    <input type="text" class="form-control" id="meta_title" placeholder="Enter Meta Title" name="meta_title"   @if (!empty($product['meta_title'])) value="{{ $product['meta_title'] }}" @else value="{{ old('meta_title') }}" @endif >  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="meta_description">Meta Description</label>
-                                    <input type="text" class="form-control" id="meta_description" placeholder="Enter Meta Description" name="meta_description"   @if (!empty($product['meta_description'])) value="{{ $product['meta_description'] }}" @else value="{{ old('meta_description') }}" @endif >  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="meta_keywords">Meta Keywords</label>
-                                    <input type="text" class="form-control" id="meta_keywords" placeholder="Enter Meta Keywords" name="meta_keywords"   @if (!empty($product['meta_keywords'])) value="{{ $product['meta_keywords'] }}" @else value="{{ old('meta_keywords') }}" @endif >  {{-- Repopulating Forms (using old() method): https://laravel.com/docs/9.x/validation#repopulating-forms --}}
-                                </div>
-                                <div class="form-group">
-                                    <label for="is_featured">Featured Item (Yes/No)</label>
-                                    <input type="checkbox" name="is_featured" id="is_featured" value="Yes" @if (!empty($product['is_featured']) && $product['is_featured'] == 'Yes') checked @endif>
-                                </div>
-                                <div class="form-group">
-                                    <label for="is_bestseller">Best Seller Item (Yes/No)</label> {{-- Note: Only 'superadmin' can mark a product as 'bestseller', but 'vendor' can't --}}
-                                    <input type="checkbox" name="is_bestseller" id="is_bestseller" value="Yes" @if (!empty($product['is_bestseller']) && $product['is_bestseller'] == 'Yes') checked @endif>
-                                </div>
-                                <button type="submit" class="btn btn-primary mr-2">Submit</button>
-                                <button type="reset"  class="btn btn-light">Cancel</button>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- Including the related filters -->
+                        <div class="loadFilters">
+                            @include('admin.filters.category_filters')
+                        </div>
+
+                        <div class="row">
+                            <!-- Product Name -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_name">Product Name</label>
+                                    <input type="text" class="form-control" id="product_name" name="product_name"
+                                        placeholder="Enter Product Name"
+                                        value="{{ $product['product_name'] ?? old('product_name') }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Product Code -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_code">Product Code</label>
+                                    <input type="text" class="form-control" id="product_code" name="product_code"
+                                        placeholder="Enter Product Code"
+                                        value="{{ $product['product_code'] ?? old('product_code') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Product Color -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_color">Product Color</label>
+                                    <input type="text" class="form-control" id="product_color" name="product_color"
+                                        placeholder="Enter Product Color"
+                                        value="{{ $product['product_color'] ?? old('product_color') }}">
+                                </div>
+                            </div>
+
+                            <!-- Product Price -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_price">Product Price</label>
+                                    <input type="number" class="form-control" id="product_price" name="product_price"
+                                        placeholder="Enter Product Price"
+                                        value="{{ $product['product_price'] ?? old('product_price') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Product Discount -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_discount">Product Discount (%)</label>
+                                    <input type="number" class="form-control" id="product_discount"
+                                        name="product_discount" placeholder="Enter Discount"
+                                        value="{{ $product['product_discount'] ?? old('product_discount') }}">
+                                </div>
+                            </div>
+
+                            <!-- Product Weight -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_weight">Product Weight (grams)</label>
+                                    <input type="number" class="form-control" id="product_weight" name="product_weight"
+                                        placeholder="Enter Product Weight"
+                                        value="{{ $product['product_weight'] ?? old('product_weight') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Group Code -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="group_code">Group Code</label>
+                                    <input type="text" class="form-control" id="group_code" name="group_code"
+                                        placeholder="Enter Group Code"
+                                        value="{{ $product['group_code'] ?? old('group_code') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Description (Full Width) -->
+                        <div class="form-group mb-3">
+                            <label for="description">Product Description</label>
+                            <textarea name="description" id="description" class="form-control" rows="4"
+                                placeholder="Enter product description">{{ $product['description'] ?? old('description') }}</textarea>
+                        </div>
+
+                        <!-- SEO Meta Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="meta_title">Meta Title</label>
+                                    <input type="text" class="form-control" id="meta_title" name="meta_title"
+                                        placeholder="Enter Meta Title"
+                                        value="{{ $product['meta_title'] ?? old('meta_title') }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="meta_description">Meta Description</label>
+                                    <textarea type="text" class="form-control" id="meta_description"
+                                        name="meta_description" placeholder="Enter Meta Description"
+                                        >{{ $product['meta_description'] ?? old('meta_description') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="meta_keywords">Meta Keywords</label>
+                                    <input type="text" class="form-control" id="meta_keywords" name="meta_keywords"
+                                        placeholder="Enter Meta Keywords"
+                                        value="{{ $product['meta_keywords'] ?? old('meta_keywords') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Options -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="is_featured"
+                                            id="is_featured" value="Yes"
+                                            {{ !empty($product['is_featured']) && $product['is_featured'] == 'Yes' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="is_featured">
+                                            Featured Item
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="is_bestseller"
+                                            id="is_bestseller" value="Yes"
+                                            {{ !empty($product['is_bestseller']) && $product['is_bestseller'] == 'Yes' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="is_bestseller">
+                                            Best Seller Item
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save"></i>
+                                {{ empty($product['id']) ? 'Create Product' : 'Update Product' }}
+                            </button>
+                            <a href="{{ url('admin/products') }}" class="btn btn-light px-4">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+
                 </div>
             </div>
         </div>
-        <!-- content-wrapper ends -->
-        @include('admin.layout.footer')
-        <!-- partial -->
+
+        <!-- Media Upload Section -->
+        <div class="col-lg-4">
+            <!-- Product Images -->
+            <div class="card border mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-images me-2"></i> Product Images</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="product_images" class="form-label">Upload Images (Multiple)</label>
+                        <input type="file" class="form-control" id="product_images" name="product_images[]" multiple
+                            accept="image/*">
+                        <small class="text-muted">Recommended Size: 1000x1000px. You can select multiple images.</small>
+                    </div>
+
+                    <!-- Image Preview Container -->
+                    <div id="imagePreviewContainer" class="row g-2 mb-3">
+                        <!-- New uploaded images preview will appear here -->
+                    </div>
+
+                    <!-- Existing Images -->
+                    @if (!empty($product['product_images']))
+                        <div class="existing-images">
+                            <h6 class="text-muted mb-2">Current Images:</h6>
+                            <div class="row g-2">
+                                @foreach ($product['product_images'] as $image)
+                                    <div class="col-6" id="existing-image-{{ $image['id'] }}">
+                                        <div class="position-relative">
+                                            <img src="{{ asset('front/images/product_images/small/' . $image['image']) }}"
+                                                alt="Product Image" class="img-fluid rounded border">
+                                            <button type="button"
+                                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 delete-existing-image"
+                                                data-image-id="{{ $image['id'] }}"
+                                                style="width: 25px; height: 25px; font-size: 10px;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if (!empty($product['product_image']) && empty($product['product_images']))
+                        <!-- For old single image format -->
+                        <div class="existing-images">
+                            <h6 class="text-muted mb-2">Current Image:</h6>
+                            <div class="position-relative d-inline-block">
+                                <img src="{{ asset('front/images/product_images/small/' . $product['product_image']) }}"
+                                    alt="Product Image" class="img-fluid rounded border" style="max-width: 150px;">
+                                <button type="button"
+                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 confirmDelete"
+                                    module="product-image" moduleid="{{ $product['id'] }}"
+                                    style="width: 25px; height: 25px; font-size: 10px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Product Video -->
+            <div class="card border">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-video me-2"></i> Product Video</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="product_video" class="form-label">Upload Video</label>
+                        <input type="file" class="form-control" id="product_video" name="product_video"
+                            accept="video/*">
+                        <small class="text-muted">Maximum Size: 2MB</small>
+                    </div>
+
+                    <!-- Video Preview -->
+                    <div id="videoPreviewContainer" class="mb-3" style="display: none;">
+                        <video id="videoPreview" width="100%" height="200" controls class="rounded border">
+                            Your browser does not support the video tag.
+                        </video>
+                        <button type="button" class="btn btn-sm btn-danger mt-2 w-100" id="removeVideoPreview">
+                            <i class="fas fa-times me-1"></i> Remove Video
+                        </button>
+                    </div>
+
+                    <!-- Existing Video -->
+                    @if (!empty($product['product_video']))
+                        <div class="existing-video">
+                            <h6 class="text-muted mb-2">Current Video:</h6>
+                            <video width="100%" height="200" controls class="rounded border mb-2">
+                                <source src="{{ asset('front/videos/product_videos/' . $product['product_video']) }}"
+                                    type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <button type="button" class="btn btn-sm btn-danger w-100 confirmDelete"
+                                module="product-video" moduleid="{{ $product['id'] }}">
+                                <i class="fas fa-trash me-1"></i> Delete Video
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Multiple Image Preview
+        document.getElementById('product_images').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.innerHTML = '';
+
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageDiv = document.createElement('div');
+                        imageDiv.className = 'col-6';
+                        imageDiv.innerHTML = `
+                            <div class="position-relative">
+                                <img src="${e.target.result}" alt="Preview" class="rounded border">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 remove-preview" 
+                                        data-index="${index}" style="width: 25px; height: 25px; font-size: 10px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                        previewContainer.appendChild(imageDiv);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // Remove image preview
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-preview')) {
+                e.target.closest('.col-6').remove();
+            }
+        });
+
+        // Video Preview
+        document.getElementById('product_video').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const previewContainer = document.getElementById('videoPreviewContainer');
+            const videoPreview = document.getElementById('videoPreview');
+
+            if (file && file.type.startsWith('video/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    videoPreview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Remove video preview
+        document.getElementById('removeVideoPreview').addEventListener('click', function() {
+            document.getElementById('product_video').value = '';
+            document.getElementById('videoPreviewContainer').style.display = 'none';
+            document.getElementById('videoPreview').src = '';
+        });
+
+        // Delete existing images
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.delete-existing-image')) {
+                const imageId = e.target.closest('.delete-existing-image').getAttribute('data-image-id');
+                if (confirm('Are you sure you want to delete this image?')) {
+                    // Make AJAX call to delete image
+                    fetch(`{{ url('admin/delete-product-image') }}/${imageId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                    'content'),
+                                'Content-Type': 'application/json',
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById(`existing-image-${imageId}`).remove();
+                                alert('Image deleted successfully!');
+                            } else {
+                                alert('Error deleting image!');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error deleting image!');
+                        });
+                }
+            }
+        });
+
+        // Existing delete functionality for single image/video
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.confirmDelete')) {
+                const element = e.target.closest('.confirmDelete');
+                const module = element.getAttribute('module');
+                const moduleId = element.getAttribute('moduleid');
+
+                if (confirm('Are you sure you want to delete this ' + module.replace('-', ' ') + '?')) {
+                    window.location.href = `{{ url('admin/delete-product-image-video') }}/${module}/${moduleId}`;
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .form-check-input:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+        .existing-images img,
+        #imagePreviewContainer img {
+            max-height: 120px;
+            object-fit: cover;
+        }
+
+        .position-relative .btn {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .card {
+            transition: box-shadow 0.15s ease-in-out;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <script>
+        $(document).ready(function() {
+            $('#category_id').select2({
+                placeholder: "Select Category",
+                allowClear: true
+            });
+            $('#brand_id').select2({
+                placeholder: "Select Brand",
+                allowClear: true
+            });
+        });
+    </script>
 @endsection

@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="{{ url('admin/vendors/ti-icons/css/themify-icons.css') }}">
     <link rel="stylesheet" href="{{ url('admin/vendors/css/vendor.bundle.base.css') }}">
     <!-- endinject -->
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <!-- Plugin css for this page (The icons from Skydash Admin Panel template) -->
     <link rel="stylesheet" href="{{ url('admin/vendors/mdi/css/materialdesignicons.min.css') }}">
@@ -94,6 +94,7 @@
 
 {{-- Start: Our Custom Admin JS --}}
 <script src="{{ url('admin/js/custom.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     let sidebarCollapsed = false;
     let sidebarOpen = false;

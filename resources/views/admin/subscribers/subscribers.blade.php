@@ -1,101 +1,117 @@
-{{-- This page (view) is rendered from subscribers() method in Admin/NewsletterController.php Controller --}}
 @extends('admin.layout.layout')
 
-
 @section('content')
-    <div class="main-panel">
-        <div class="content-wrapper">
-            <div class="row">
-                <div class="col-lg-12 grid-margin stretch-card">
-                    <div class="card">
-                        <div class="card-body">
-                            <h4 class="card-title">Subscribers</h4>
-                            
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Subscribers</h1>
+        <div class="page-actions">
+            <a href="{{ url('admin/export-subscribers') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-download"></i> Export Subscribers
+            </a>
+        </div>
+    </div>
 
-                            {{-- Export Subscribers (the `newsletter_subscribers` database table) as an Excel file Button --}} 
-                            <a href="{{ url('admin/export-subscribers') }}" style="max-width: 100px; float: right" class="btn btn-block btn-primary">Export</a>
+    <!-- Success Message -->
+    @if (Session::has('success_message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success:</strong> {{ Session::get('success_message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-
-
-                            {{-- Displaying The Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors AND https://laravel.com/docs/9.x/blade#validation-errors --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            {{-- Our Bootstrap success message in case of updating admin password is successful: --}}
-                            @if (Session::has('success_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>Success:</strong> {{ Session::get('success_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-
-
-                            <div class="table-responsive pt-3">
-                                {{-- DataTable --}}
-                                <table id="subscribers" class="table table-bordered"> {{-- using the id here for the DataTable --}}
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Email</th>
-                                            <th>Subscribed on</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-
-
-                                        @foreach ($subscribers as $subscriber)
-                                            <tr>
-                                                <td>{{ $subscriber['id'] }}</td>
-                                                <td>{{ $subscriber['email'] }}</td>
-                                                <td>
-                                                    {{ date("F j, Y, g:i a", strtotime($subscriber['created_at'])) }} {{-- https://stackoverflow.com/questions/2487921/convert-a-date-format-in-php --}} {{-- https://www.php.net/manual/en/function.date.php#:~:text=date(%22-,F%20j%2C%20Y%2C%20g%3Ai%20a,-%22)%3B%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20//%20March --}} 
-                                                </td>
-                                                <td>
-                                                    @if ($subscriber['status'] == 1)
-                                                        <a class="updateSubscriberStatus" id="subscriber-{{ $subscriber['id'] }}" subscriber_id="{{ $subscriber['id'] }}" href="javascript:void(0)"> {{-- Using HTML Custom Attributes. Check admin/js/custom.js --}}
-                                                            <i style="font-size: 25px" class="mdi mdi-bookmark-check" status="Active"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                        </a>
-                                                    @else {{-- if the admin status is inactive --}}
-                                                        <a class="updateSubscriberStatus" id="subscriber-{{ $subscriber['id'] }}" subscriber_id="{{ $subscriber['id'] }}" href="javascript:void(0)"> {{-- Using HTML Custom Attributes. Check admin/js/custom.js --}}
-                                                            <i style="font-size: 25px" class="mdi mdi-bookmark-outline" status="Inactive"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                        </a>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    {{-- <a href="{{ url('admin/edit-shipping-charges/' . $shipping['id']) }}"> --}}
-                                                        {{-- <i style="font-size: 25px" class="mdi mdi-pencil-box"></i> --}} {{-- Icons from Skydash Admin Panel Template --}}
-                                                    {{-- </a> --}}
-
-                                                    {{-- Confirm Deletion JS alert and Sweet Alert --}}
-                                                    {{-- <a title="Shipping" class="confirmDelete" href="{{ url('admin/delete-shipping/' . $shipping['id']) }}"> --}}
-                                                        {{-- <i style="font-size: 25px" class="mdi mdi-file-excel-box"></i> --}} {{-- Icons from Skydash Admin Panel Template --}}
-                                                    {{-- </a> --}}
-
-                                                    <a href="JavaScript:void(0)" class="confirmDelete" module="subscriber" moduleid="{{ $subscriber['id'] }}">
-                                                        <i style="font-size: 25px" class="mdi mdi-file-excel-box"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-
-
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Subscribers Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-3">
+            <div class="table-responsive">
+                <table id="subscribers" class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Subscribed On</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($subscribers as $subscriber)
+                            <tr>
+                                <td>{{ $subscriber['id'] }}</td>
+                                <td>{{ $subscriber['email'] }}</td>
+                                <td>{{ date('M d, Y h:i A', strtotime($subscriber['created_at'])) }}</td>
+                                <td>
+                                    <a href="javascript:void(0)" 
+                                       class="updateSubscriberStatus" 
+                                       subscriber_id="{{ $subscriber['id'] }}" 
+                                       id="subscriber-{{ $subscriber['id'] }}">
+                                        @if ($subscriber['status'] == 1)
+                                            <i class="fas fa-check-circle text-success" style="font-size: 20px;" status="Active"></i>
+                                        @else
+                                            <i class="fas fa-times-circle text-secondary" style="font-size: 20px;" status="Inactive"></i>
+                                        @endif
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="action-buttons d-flex gap-2">
+                                        <a href="JavaScript:void(0)" 
+                                           class="confirmDelete btn btn-sm btn-outline-danger px-2 py-1" 
+                                           module="subscriber" 
+                                           moduleid="{{ $subscriber['id'] }}" 
+                                           title="Delete Subscriber">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
-        <!-- content-wrapper ends -->
-        <!-- partial:../../partials/_footer.html -->
-        <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2022. All rights reserved.</span>
-            </div>
-        </footer>
-        <!-- partial -->
     </div>
 @endsection
+
+@push('scripts')
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+    $('#subscribers').DataTable({
+        responsive: true,
+        scrollY: 400, // Set the height of the scrollable area
+        scrollCollapse: true,
+        paging: false, // Disable pagination if you want only scroll
+        fixedHeader: true, // Keep headers fixed while scrolling
+        columnDefs: [
+            { targets: [4], orderable: false }, // Make image column not sortable
+            { targets: [9], orderable: false }  // Make actions column not sortable
+        ]
+    });
+});
+
+        // Status Update (AJAX)
+        $(document).on('click', '.updateSubscriberStatus', function () {
+            let subscriberId = $(this).attr('subscriber_id');
+            let status = $(this).children('span').attr('status');
+
+            $.ajax({
+                url: "{{ url('admin/update-subscriber-status') }}",
+                type: "POST",
+                 {
+                    _token: "{{ csrf_token() }}",
+                    subscriber_id: subscriberId,
+                    status: status
+                },
+                success: function (response) {
+                    if (response.status == 1) {
+                        $('#subscriber-' + subscriberId).html('<span class="badge bg-success" status="Active">Active</span>');
+                    } else {
+                        $('#subscriber-' + subscriberId).html('<span class="badge bg-danger" status="Inactive">Inactive</span>');
+                    }
+                }
+            });
+        });
+    </script>
+@endpush
