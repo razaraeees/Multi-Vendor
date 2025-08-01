@@ -3,7 +3,7 @@
 @section('content')
     <!-- Page Header -->
     <div class="page-header">
-        {{-- <h1 class="page-title">{{ empty($category['id']) ? 'Add New Category' : 'Edit Category' }}</h1> --}}
+        <h1 class="page-title">{{ empty($category['id']) ? 'Add New Category' : 'Edit Category' }}</h1>
         <div class="page-actions">
             <a href="{{ url('admin/categories') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-arrow-left"></i> Back to List

@@ -1,122 +1,181 @@
-{{-- This file is rendered by editShippingCharges() method in Admin/ShippingController.php --}}
 @extends('admin.layout.layout')
 
-
 @section('content')
-    <div class="main-panel">
-        <div class="content-wrapper">
-            <div class="row">
-                <div class="col-md-12 grid-margin">
-                    <div class="row">
-                        <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                            <h3 class="font-weight-bold">Edit Shipping Charges</h3>
-                        </div>
-                        <div class="col-12 col-xl-4">
-                            <div class="justify-content-end d-flex">
-                                <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                    <button class="btn btn-sm btn-light bg-white dropdown-toggle" type="button" id="dropdownMenuDate2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                                    <i class="mdi mdi-calendar"></i> Today (10 Jan 2021)
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuDate2">
-                                        <a class="dropdown-item" href="#">January - March</a>
-                                        <a class="dropdown-item" href="#">March - June</a>
-                                        <a class="dropdown-item" href="#">June - August</a>
-                                        <a class="dropdown-item" href="#">August - November</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 grid-margin stretch-card">
-                    <div class="card">
-                        <div class="card-body">
-                            <h4 class="card-title">{{ $title }}</h4>
-
-
-                            {{-- Our Bootstrap error code in case of wrong current password or the new password and confirm password are not matching: --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            @if (Session::has('error_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <strong>Error:</strong> {{ Session::get('error_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-
-
-
-                            {{-- Displaying Laravel Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors --}}    
-                            @if ($errors->any())
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                {{-- <strong>Error:</strong> {{ Session::get('error_message') }} --}}
-
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            @endif
-
-
-
-                            {{-- Displaying The Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors AND https://laravel.com/docs/9.x/blade#validation-errors --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            {{-- Our Bootstrap success message in case of updating admin password is successful: --}}
-                            @if (Session::has('success_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>Success:</strong> {{ Session::get('success_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-                
-
-                            
-                            <form class="forms-sample" action="{{ url('admin/edit-shipping-charges/' . $shippingDetails['id']) }}" method="post"> <!-- If the id is not passed in from the route, this measn 'Add a new Shipping Charge', but if the id is passed in from the route, this means 'Edit the Shipping Charge' --> <!-- Using the enctype="multipart/form-data" to allow uploading files (images) -->
-                                @csrf {{-- Preventing CSRF Requests: https://laravel.com/docs/9.x/csrf#preventing-csrf-requests --}}
-
-                                <div class="form-group">
-                                    <label for="country">Country</label>
-                                    <input type="text" class="form-control" value="{{ $shippingDetails['country'] }}" readonly> 
-                                </div>
-                                <div class="form-group">
-                                    <label for="0_500g">Rate (0-500g)</label>
-                                    <input type="text" class="form-control" id="0_500g" placeholder="Enter Shipping Rate" name="0_500g" value="{{ $shippingDetails['0_500g'] }}"> 
-                                </div>
-                                <div class="form-group">
-                                    <label for="501g_1000g">Rate (501g-1000g)</label>
-                                    <input type="text" class="form-control" id="501g_1000g" placeholder="Enter Shipping Rate" name="501g_1000g" value="{{ $shippingDetails['501g_1000g'] }}"> 
-                                </div>
-                                <div class="form-group">
-                                    <label for="1001_2000g">Rate (1001-2000g)</label>
-                                    <input type="text" class="form-control" id="1001_2000g" placeholder="Enter Shipping Rate" name="1001_2000g" value="{{ $shippingDetails['1001_2000g'] }}"> 
-                                </div>
-                                <div class="form-group">
-                                    <label for="2001g_5000g">Rate (2001g-5000g)</label>
-                                    <input type="text" class="form-control" id="2001g_5000g" placeholder="Enter Shipping Rate" name="2001g_5000g" value="{{ $shippingDetails['2001g_5000g'] }}"> 
-                                </div>
-                                <div class="form-group">
-                                    <label for="above_5000g">Rate (Above 5000g)</label>
-                                    <input type="text" class="form-control" id="above_5000g" placeholder="Enter Shipping Rate" name="above_5000g" value="{{ $shippingDetails['above_5000g'] }}"> 
-                                </div>
-                                <button type="submit" class="btn btn-primary mr-2">Submit</button>
-                                <button type="reset"  class="btn btn-light">Cancel</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Edit Shipping Charges</h1>
+        <div class="page-actions">
+            <a href="{{ url('admin/shipping-charges') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
         </div>
-        <!-- content-wrapper ends -->
-        @include('admin.layout.footer')
-        <!-- partial -->
     </div>
+
+    <!-- Success Message -->
+    @if (Session::has('success_message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success:</strong> {{ Session::get('success_message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Error Message -->
+    @if (Session::has('error_message'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> {{ Session::get('error_message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Validation Errors -->
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Please fix the following errors:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Shipping Charges Form -->
+    <div class="card shadow-sm border">
+        <div class="card-body p-4">
+            <form action="{{ url('admin/edit-shipping-charges/' . $shippingDetails['id']) }}" method="POST" class="needs-validation" novalidate>
+                @csrf
+
+                <div class="row g-4">
+                    <!-- Left Column -->
+                    <div class="col-md-6">
+                        <div class="form-group mb-4">
+                            <label for="country">Country</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ $shippingDetails['country'] }}"
+                                readonly
+                            >
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="0_500g">Rate (0g - 500g)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                class="form-control @error('0_500g') is-invalid @enderror"
+                                id="0_500g"
+                                name="0_500g"
+                                placeholder="Enter rate for 0-500g"
+                                value="{{ old('0_500g', $shippingDetails['0_500g']) }}"
+                                required
+                            >
+                            <div class="invalid-feedback">
+                                @error('0_500g') {{ $message }} @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="501g_1000g">Rate (501g - 1000g)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                class="form-control @error('501g_1000g') is-invalid @enderror"
+                                id="501g_1000g"
+                                name="501g_1000g"
+                                placeholder="Enter rate for 501-1000g"
+                                value="{{ old('501g_1000g', $shippingDetails['501g_1000g']) }}"
+                                required
+                            >
+                            <div class="invalid-feedback">
+                                @error('501g_1000g') {{ $message }} @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="col-md-6">
+                        <div class="form-group mb-4">
+                            <label for="1001_2000g">Rate (1001g - 2000g)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                class="form-control @error('1001_2000g') is-invalid @enderror"
+                                id="1001_2000g"
+                                name="1001_2000g"
+                                placeholder="Enter rate for 1001-2000g"
+                                value="{{ old('1001_2000g', $shippingDetails['1001_2000g']) }}"
+                                required
+                            >
+                            <div class="invalid-feedback">
+                                @error('1001_2000g') {{ $message }} @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="2001g_5000g">Rate (2001g - 5000g)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                class="form-control @error('2001g_5000g') is-invalid @enderror"
+                                id="2001g_5000g"
+                                name="2001g_5000g"
+                                placeholder="Enter rate for 2001-5000g"
+                                value="{{ old('2001g_5000g', $shippingDetails['2001g_5000g']) }}"
+                                required
+                            >
+                            <div class="invalid-feedback">
+                                @error('2001g_5000g') {{ $message }} @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="above_5000g">Rate (Above 5000g)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                class="form-control @error('above_5000g') is-invalid @enderror"
+                                id="above_5000g"
+                                name="above_5000g"
+                                placeholder="Enter rate for above 5000g"
+                                value="{{ old('above_5000g', $shippingDetails['above_5000g']) }}"
+                                required
+                            >
+                            <div class="invalid-feedback">
+                                @error('above_5000g') {{ $message }} @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="d-flex gap-3 pt-3">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-1"></i> Update Charges
+                    </button>
+                    <a href="{{ url('admin/shipping-charges') }}" class="btn btn-light px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection
+
+<!-- Bootstrap 5 Form Validation Script -->
+@section('scripts')
+<script>
+    (() => {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
 @endsection

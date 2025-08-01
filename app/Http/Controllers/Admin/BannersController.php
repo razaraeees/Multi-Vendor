@@ -84,7 +84,7 @@ class BannersController extends Controller
         // SECONDLY, IF THE REQUEST METHOS IS 'POST', THEN SUBMIT THE HTML <form> IN add_edit_banner.blade.php PAGE (WHETHER ADD OR UPDATE A BANNER):
         if ($request->isMethod('post')) { // WHETHER Add or Update <form> submission!!
             $data = $request->all();
-            // dd($data);
+
 
             $banner->type   = $data['type'];
             $banner->link   = $data['link'];
@@ -101,31 +101,20 @@ class BannersController extends Controller
                 $height = '450';
             }
 
-            // Uploading Banner Image    // Using the Intervention package for uploading images
-            if ($request->hasFile('image')) { // the HTML name attribute    name="admin_name"    in update_admin_details.blade.php
-                $image_tmp = $request->file('image'); // Retrieving Uploaded Files: https://laravel.com/docs/9.x/requests#retrieving-uploaded-files
+            if ($request->hasFile('image')) { 
+                $image_tmp = $request->file('image');
                 if ($image_tmp->isValid()) {
                     // Get the image extension
                     $extension = $image_tmp->getClientOriginalExtension();
-
-                    // Generate a random name for the uploaded image (to avoid that the image might get overwritten if its name is repeated)
                     $imageName = rand(111, 99999) . '.' . $extension;
 
-                    // Assigning the uploaded images path inside the 'public' folder
                     $imagePath = 'front/images/banner_images/' . $imageName;
-
-                    // Upload the image using the 'Intervention' package and save it in our path inside the 'public' folder
-                    // Image::make($image_tmp)->resize(1920, 720)->save($imagePath); // '\Image' is the Intervention package
-                    Image::make($image_tmp)->resize($width, $height)->save($imagePath); // '\Image' is the Intervention package
-
-                    // Insert the image name in the database table
+                    Image::make($image_tmp)->resize($width, $height)->save($imagePath);
                     $banner->image = $imageName;
                 }
             }
-
-            $banner->save(); // save inserted data (whether add or update a Brand)
-
-            return redirect('admin/banners')->with('success_message', $message); // $message was defined in the first if-else statement (in case Add or Update cases)
+            $banner->save(); 
+            return redirect('admin/banners')->with('success_message', $message); 
         }
 
 

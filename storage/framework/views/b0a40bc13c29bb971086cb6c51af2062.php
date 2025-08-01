@@ -48,7 +48,7 @@
                                          style="width: 150px; height: auto;">
                                 </td>
                                 <td>
-                                    <?php echo e($banner['type']); ?>
+                                    <?php echo e(ucfirst($banner['type'])); ?>
 
                                 </td>
                                 <td><?php echo e($banner['link']); ?></td>
