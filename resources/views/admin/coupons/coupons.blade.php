@@ -1,103 +1,113 @@
 @extends('admin.layout.layout')
 
-
 @section('content')
-    <div class="main-panel">
-        <div class="content-wrapper">
-            <div class="row">
-                <div class="col-lg-12 grid-margin stretch-card">
-                    <div class="card">
-                        <div class="card-body">
-                            <h4 class="card-title">Coupons</h4>
-                            
+<div class="main-panel">
+    <div class="content-wrapper">
 
+        {{-- Page Header --}}
+        <div class="page-header d-flex justify-content-between align-items-center mb-4">
+            <h3 class="page-title">Coupons Management</h3>
+            <nav aria-label="breadcrumb">
+                <a href="{{ url('admin/add-edit-coupon') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Coupon
+                </a>
+            </nav>
+        </div>
 
-                            
-                            <a href="{{ url('admin/add-edit-coupon') }}" style="max-width: 150px; float: right; display: inline-block" class="btn btn-block btn-primary">Add Coupon</a>
+        <div class="row">
+            <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
 
-                            {{-- Displaying The Validation Errors: https://laravel.com/docs/9.x/validation#quick-displaying-the-validation-errors AND https://laravel.com/docs/9.x/blade#validation-errors --}}
-                            {{-- Determining If An Item Exists In The Session (using has() method): https://laravel.com/docs/9.x/session#determining-if-an-item-exists-in-the-session --}}
-                            {{-- Our Bootstrap success message in case of updating admin password is successful: --}}
-                            @if (Session::has('success_message')) <!-- Check AdminController.php, updateAdminPassword() method -->
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>Success:</strong> {{ Session::get('success_message') }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            @endif
-
-
-                            <div class="table-responsive pt-3">
-                                {{-- DataTable --}}
-                                <table id="coupons" class="table table-bordered"> {{-- using the id here for the DataTable --}}
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Coupon Code</th>
-                                            <th>Coupon Type</th>
-                                            <th>Amount</th>
-                                            <th>Expiry Date</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($coupons as $coupon)
-                                            <tr>
-                                                <td>{{ $coupon['id'] }}</td>
-                                                <td>{{ $coupon['coupon_code'] }}</td>
-                                                <td>{{ $coupon['coupon_type'] }}</td>
-                                                <td>
-                                                    {{ $coupon['amount'] }}
-                                                    @if ($coupon['amount_type'] == 'Percentage')
-                                                        %
-                                                    @else
-                                                        INR
-                                                    @endif
-                                                </td>
-                                                <td>{{ $coupon['expiry_date'] }}</td>
-                                                <td>
-                                                    @if ($coupon['status'] == 1)
-                                                        <a class="updateCouponStatus" id="coupon-{{ $coupon['id'] }}" coupon_id="{{ $coupon['id'] }}" href="javascript:void(0)"> {{-- Using HTML Custom Attributes. Check admin/js/custom.js --}}
-                                                            <i style="font-size: 25px" class="mdi mdi-bookmark-check" status="Active"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                        </a>
-                                                    @else {{-- if the admin status is inactive --}}
-                                                        <a class="updateCouponStatus" id="coupon-{{ $coupon['id'] }}" coupon_id="{{ $coupon['id'] }}" href="javascript:void(0)"> {{-- Using HTML Custom Attributes. Check admin/js/custom.js --}}
-                                                            <i style="font-size: 25px" class="mdi mdi-bookmark-outline" status="Inactive"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                        </a>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <a href="{{ url('admin/add-edit-coupon/' . $coupon['id']) }}">
-                                                        <i style="font-size: 25px" class="mdi mdi-pencil-box"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                    </a>
-
-                                                    {{-- Confirm Deletion JS alert and Sweet Alert --}}
-                                                    {{-- <a title="Coupon" class="confirmDelete" href="{{ url('admin/delete-coupon/' . $coupon['id']) }}"> --}}
-                                                        {{-- <i style="font-size: 25px" class="mdi mdi-file-excel-box"></i> --}} {{-- Icons from Skydash Admin Panel Template --}}
-                                                    {{-- </a> --}}
-                                                    <a href="JavaScript:void(0)" class="confirmDelete" module="coupon" moduleid="{{ $coupon['id'] }}">
-                                                        <i style="font-size: 25px" class="mdi mdi-file-excel-box"></i> {{-- Icons from Skydash Admin Panel Template --}}
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        {{-- Success Message --}}
+                        @if (Session::has('success_message'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>Success:</strong> {{ Session::get('success_message') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
+                        @endif
+
+                        {{-- Coupons Table --}}
+                        <div class="table-responsive">
+                            <table id="coupons" class="table table-bordered dt-responsive nowrap" style="width:100%">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Coupon Code</th>
+                                        <th>Coupon Type</th>
+                                        <th>Amount</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($coupons as $coupon)
+                                        <tr>
+                                            <td>{{ $coupon['id'] }}</td>
+                                            <td>{{ $coupon['coupon_code'] }}</td>
+                                            <td>{{ ucfirst($coupon['coupon_type']) }}</td>
+                                            <td>
+                                                {{ $coupon['amount'] }}
+                                                {{ $coupon['amount_type'] == 'Percentage' ? '%' : 'INR' }}
+                                            </td>
+                                            <td>{{ $coupon['expiry_date'] }}</td>
+                                            <td>
+                                                <a class="updateCouponStatus"
+                                                   id="coupon-{{ $coupon['id'] }}"
+                                                   coupon_id="{{ $coupon['id'] }}"
+                                                   href="javascript:void(0)">
+                                                    <i class="fas {{ $coupon['status'] == 1 ? 'fa-check-circle text-success' : 'fa-times-circle text-secondary' }}"
+                                                       status="{{ $coupon['status'] == 1 ? 'Active' : 'Inactive' }}"
+                                                       style="font-size:20px"></i>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons d-flex gap-2 justify-content-center">
+                                                    <!-- Edit Coupon -->
+                                                    <a href="{{ url('admin/add-edit-coupon/' . $coupon['id']) }}"
+                                                       class="btn btn-sm btn-outline-info px-2 py-1"
+                                                       title="Edit Coupon">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </a>
+
+                                                    <!-- Delete Coupon -->
+                                                    <a href="javascript:void(0)"
+                                                       class="confirmDelete btn btn-sm btn-outline-danger px-2 py-1"
+                                                       module="coupon"
+                                                       moduleid="{{ $coupon['id'] }}"
+                                                       title="Delete Coupon">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
-        <!-- content-wrapper ends -->
-        <!-- partial:../../partials/_footer.html -->
-        <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2022. All rights reserved.</span>
-            </div>
-        </footer>
-        <!-- partial -->
     </div>
+
+</div>
+
+{{-- DataTable Script --}}
+<script>
+    $(document).ready(function () {
+        $('#coupons').DataTable({
+            responsive: true,
+            scrollY: 400,
+            scrollCollapse: true,
+            paging: false,
+            fixedHeader: true,
+            columnDefs: [
+                { targets: [6], orderable: false } // Disable sorting on Actions column
+            ]
+        });
+    });
+</script>
 @endsection

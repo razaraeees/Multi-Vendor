@@ -50,24 +50,24 @@ Route::prefix('/admin')->group(function() {
         Route::post('update-admin-status', [AdminController::class, 'updateAdminStatus']);
 
         // Sections
-        Route::resource('sections', SectionController::class)->only(['index']);
-        Route::post('update-section-status', [SectionController::class, 'updateSectionStatus']);
-        Route::get('delete-section/{id}', [SectionController::class, 'deleteSection']);
-        Route::match(['get', 'post'], 'add-edit-section/{id?}', [SectionController::class, 'addEditSection']);
+        Route::resource('sections', SectionController::class)->only(['index'])->middleware('adminType:superadmin');
+        Route::post('update-section-status', [SectionController::class, 'updateSectionStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-section/{id}', [SectionController::class, 'deleteSection'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-section/{id?}', [SectionController::class, 'addEditSection'])->middleware('adminType:superadmin');
 
         // Categories
-        Route::get('categories', [CategoryController::class, 'categories']);
-        Route::post('update-category-status', [CategoryController::class, 'updateCategoryStatus']);
-        Route::match(['get', 'post'], 'add-edit-category/{id?}', [CategoryController::class, 'addEditCategory']);
-        Route::get('append-categories-level', [CategoryController::class, 'appendCategoryLevel']);
-        Route::get('delete-category/{id}', [CategoryController::class, 'deleteCategory']);
-        Route::get('delete-category-image/{id}', [CategoryController::class, 'deleteCategoryImage']);
+        Route::get('categories', [CategoryController::class, 'categories'])->middleware('adminType:superadmin');
+        Route::post('update-category-status', [CategoryController::class, 'updateCategoryStatus'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-category/{id?}', [CategoryController::class, 'addEditCategory'])->middleware('adminType:superadmin');
+        Route::get('append-categories-level', [CategoryController::class, 'appendCategoryLevel'])->middleware('adminType:superadmin');
+        Route::get('delete-category/{id}', [CategoryController::class, 'deleteCategory'])->middleware('adminType:superadmin');
+        Route::get('delete-category-image/{id}', [CategoryController::class, 'deleteCategoryImage'])->middleware('adminType:superadmin');
 
         // Brands
-        Route::get('brands', [BrandController::class, 'brands']);
-        Route::post('update-brand-status', [BrandController::class, 'updateBrandStatus']);
-        Route::get('delete-brand/{id}', [BrandController::class, 'deleteBrand']);
-        Route::match(['get', 'post'], 'add-edit-brand/{id?}', [BrandController::class, 'addEditBrand']);
+        Route::get('brands', [BrandController::class, 'brands'])->middleware('adminType:superadmin');
+        Route::post('update-brand-status', [BrandController::class, 'updateBrandStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-brand/{id}', [BrandController::class, 'deleteBrand'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-brand/{id?}', [BrandController::class, 'addEditBrand'])->middleware('adminType:superadmin');
 
         // Products
         Route::get('products', [AdminProductsController::class, 'products']);
@@ -78,7 +78,7 @@ Route::prefix('/admin')->group(function() {
         Route::get('delete-product-video/{id}', [AdminProductsController::class, 'deleteProductVideo']);
 
         // Attributes
-        Route::match(['get', 'post'], 'add-edit-attributes/{id}', [AdminProductsController::class, 'addAttributes']);
+        Route::match(['get', 'post'], 'add-edit-attributes/{id}', [AdminProductsController::class, 'addAttributes']);  
         Route::post('update-attribute-status', [AdminProductsController::class, 'updateAttributeStatus']);
         Route::get('delete-attribute/{id}', [AdminProductsController::class, 'deleteAttribute']);
         Route::match(['get', 'post'], 'edit-attributes/{id}', [AdminProductsController::class, 'editAttributes']);
@@ -89,29 +89,29 @@ Route::prefix('/admin')->group(function() {
         Route::get('delete-image/{id}', [AdminProductsController::class, 'deleteImage']);
 
         // Banners
-        Route::get('banners', [BannersController::class, 'banners']);
-        Route::post('update-banner-status', [BannersController::class, 'updateBannerStatus']);
-        Route::get('delete-banner/{id}', [BannersController::class, 'deleteBanner']);
-        Route::match(['get', 'post'], 'add-edit-banner/{id?}', [BannersController::class, 'addEditBanner']);
+        Route::get('banners', [BannersController::class, 'banners'])->middleware('adminType:superadmin');
+        Route::post('update-banner-status', [BannersController::class, 'updateBannerStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-banner/{id}', [BannersController::class, 'deleteBanner'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-banner/{id?}', [BannersController::class, 'addEditBanner'])->middleware('adminType:superadmin');
 
         // Filters
-        Route::get('filters', [FilterController::class, 'filters']);
-        Route::post('update-filter-status', [FilterController::class, 'updateFilterStatus']);
-        Route::post('update-filter-value-status', [FilterController::class, 'updateFilterValueStatus']);
-        Route::get('filters-values', [FilterController::class, 'filtersValues']);
-        Route::match(['get', 'post'], 'add-edit-filter/{id?}', [FilterController::class, 'addEditFilter']);
-        Route::match(['get', 'post'], 'add-edit-filter-value/{id?}', [FilterController::class, 'addEditFilterValue']);
-        Route::post('category-filters', [FilterController::class, 'categoryFilters']);
+        Route::get('filters', [FilterController::class, 'filters'])->middleware('adminType:superadmin');
+        Route::post('update-filter-status', [FilterController::class, 'updateFilterStatus'])->middleware('adminType:superadmin');
+        Route::post('update-filter-value-status', [FilterController::class, 'updateFilterValueStatus'])->middleware('adminType:superadmin');
+        Route::get('filters-values', [FilterController::class, 'filtersValues'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-filter/{id?}', [FilterController::class, 'addEditFilter'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-filter-value/{id?}', [FilterController::class, 'addEditFilterValue'])->middleware('adminType:superadmin');
+        Route::post('category-filters', [FilterController::class, 'categoryFilters'])->middleware('adminType:superadmin');
 
         // Coupons
-        Route::get('coupons', [CouponsController::class, 'coupons']);
-        Route::post('update-coupon-status', [CouponsController::class, 'updateCouponStatus']);
-        Route::get('delete-coupon/{id}', [CouponsController::class, 'deleteCoupon']);
-        Route::match(['get', 'post'], 'add-edit-coupon/{id?}', [CouponsController::class, 'addEditCoupon']);
+        Route::get('coupons', [CouponsController::class, 'coupons'])->middleware('adminType:superadmin');
+        Route::post('update-coupon-status', [CouponsController::class, 'updateCouponStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-coupon/{id}', [CouponsController::class, 'deleteCoupon'])->middleware('adminType:superadmin');
+        Route::match(['get', 'post'], 'add-edit-coupon/{id?}', [CouponsController::class, 'addEditCoupon'])->middleware('adminType:superadmin');
 
         // Users
-        Route::get('users', [AdminUserController::class, 'users']);
-        Route::post('update-user-status', [AdminUserController::class, 'updateUserStatus']);
+        Route::get('users', [AdminUserController::class, 'users'])->middleware('adminType:superadmin');
+        Route::post('update-user-status', [AdminUserController::class, 'updateUserStatus'])->middleware('adminType:superadmin');
 
         // Orders
         Route::get('orders', [AdminOrderController::class, 'orders']);
@@ -127,15 +127,15 @@ Route::prefix('/admin')->group(function() {
         Route::match(['get', 'post'], 'edit-shipping-charges/{id}', [ShippingController::class, 'editShippingCharges']);
 
         // Subscribers
-        Route::get('subscribers', [AdminNewsletterController::class, 'subscribers']);
-        Route::post('update-subscriber-status', [AdminNewsletterController::class, 'updateSubscriberStatus']);
-        Route::get('delete-subscriber/{id}', [AdminNewsletterController::class, 'deleteSubscriber']);
-        Route::get('export-subscribers', [AdminNewsletterController::class, 'exportSubscribers']);
+        Route::get('subscribers', [AdminNewsletterController::class, 'subscribers'])->middleware('adminType:superadmin');
+        Route::post('update-subscriber-status', [AdminNewsletterController::class, 'updateSubscriberStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-subscriber/{id}', [AdminNewsletterController::class, 'deleteSubscriber'])->middleware('adminType:superadmin');
+        Route::get('export-subscribers', [AdminNewsletterController::class, 'exportSubscribers'])->middleware('adminType:superadmin');
 
         // Ratings
-        Route::get('ratings', [AdminRatingController::class, 'ratings']);
-        Route::post('update-rating-status', [AdminRatingController::class, 'updateRatingStatus']);
-        Route::get('delete-rating/{id}', [AdminRatingController::class, 'deleteRating']);
+        Route::get('ratings', [AdminRatingController::class, 'ratings'])->middleware('adminType:superadmin');
+        Route::post('update-rating-status', [AdminRatingController::class, 'updateRatingStatus'])->middleware('adminType:superadmin');
+        Route::get('delete-rating/{id}', [AdminRatingController::class, 'deleteRating'])->middleware('adminType:superadmin');
     });
 });
 
