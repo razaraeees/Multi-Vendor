@@ -15,19 +15,17 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-
-            $table->integer('parent_id'); // Note: It will have a value of the parent category (from the same table), and will be zero 0 in case there's no parent category (if it's a 'Root' category)
-            $table->integer('section_id');
+            $table->integer('parent_id')->default(0); 
+            $table->integer('level')->default(1); 
             $table->string('category_name');
-            $table->string('category_image');
+            $table->string('category_image')->nullable();
             $table->double('category_discount')->default(0);
             $table->text('description')->nullable();
-            $table->string('url'); // Admin can add a SEO-friendly category URL from the Admin Panel
-            $table->string('meta_title')->nullable(); // For SEO
-            $table->string('meta_description')->nullable(); // For SEO
-            $table->string('meta_keywords')->nullable(); // For SEO
-            $table->tinyInteger('status')->default(1); // 0 means inactive, 1 means active
-
+            $table->string('url')->unique(); // SEO-friendly URL
+            $table->string('meta_title')->nullable();
+            $table->string('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
+            $table->tinyInteger('status')->default(1); 
             $table->timestamps();
         });
     }

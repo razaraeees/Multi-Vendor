@@ -14,61 +14,85 @@ class Product extends Model
 
 
     // Every 'product' belongs to a 'section'
-    public function section() {
+    public function section()
+    {
         return $this->belongsTo('App\Models\Section', 'section_id'); // 'section_id' is the foreign key
     }
 
     // Every 'product' belongs to a 'category'
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo('App\Models\Category', 'category_id'); // 'category_id' is the foreign key
     }
 
-    public function brand() { // Every product belongs to some brand    // this relationship method is used in Front/ProductsController.php    
+    public function brand()
+    { // Every product belongs to some brand    // this relationship method is used in Front/ProductsController.php    
         return $this->belongsTo('App\Models\Brand', 'brand_id'); // 'brand_id' is the foreign key
     }
 
     // Every product has many attributes
-    public function attributes() {
+    public function attributes()
+    {
         return $this->hasMany('App\Models\ProductsAttribute');
     }
 
     // Every product has many images
-    public function images() {
+    public function images()
+    {
         return $this->hasMany('App\Models\ProductsImage');
     }
 
 
     // Relationship of a Product `products` table with Vendor `vendors` table (every product belongs to a vendor)    
-    public function vendor() {    
+    public function vendor()
+    {
         return $this->belongsTo('App\Models\Vendor', 'vendor_id')->with('vendorbusinessdetails'); // 'vendor_id' is the Foreign Key of the Relationship    
     }
 
 
 
-       
-    public static function getDiscountPrice($product_id) { 
-    
-        $productDetails = Product::select('product_price', 'product_discount', 'category_id')->where('id', $product_id)->first();
-        $productDetails = json_decode(json_encode($productDetails), true);  
 
-        $categoryDetails = Category::select('category_discount')->where('id', $productDetails['category_id'])->first();
-        $categoryDetails = json_decode(json_encode($categoryDetails), true);     
+    public static function getDiscountPrice($product_id)
+    {
+        // Step 1: Product details fetch karo
+        $productDetails = Product::select('product_price', 'product_discount', 'category_id')
+            ->where('id', $product_id)
+            ->first();
 
-        
-        if ($productDetails['product_discount'] > 0) { 
-            
-            $discounted_price = $productDetails['product_price'] - ($productDetails['product_price'] * $productDetails['product_discount'] / 100);
-        } else if ($categoryDetails['category_discount'] > 0) { 
-            
-            $discounted_price = $productDetails['product_price'] - ($productDetails['product_price'] * $categoryDetails['category_discount'] / 100);
-        } else { 
-            $discounted_price = 0;
+        // Agar product nahi mila, toh 0 return karo
+        if (!$productDetails) {
+            return 0;
         }
-        return $discounted_price;
+
+        // Step 2: Category discount check karo
+        $category_id = $productDetails->category_id;
+
+        // Agar category_id valid hai, toh category discount fetch karo
+        $categoryDiscount = 0;
+        if ($category_id) {
+            $category = Category::where('id', $category_id)->value('category_discount');
+            $categoryDiscount = $category ?? 0; // Agar category nahi mili toh 0
+        }
+
+        $price = $productDetails->product_price;
+        $productDiscount = $productDetails->product_discount ?? 0;
+
+        // Step 3: Discount calculate karo
+        if ($productDiscount > 0) {
+            // Product level discount
+            return $price - ($price * $productDiscount / 100);
+        } elseif ($categoryDiscount > 0) {
+            // Category level discount
+            return $price - ($price * $categoryDiscount / 100);
+        }
+
+        // Agar koi discount nahi hai
+        return $price; // Ya 0 return karne ki jagah original price return karo (best practice)
     }
-    
-    public static function getDiscountAttributePrice($product_id, $size) { 
-        
+
+    public static function getDiscountAttributePrice($product_id, $size)
+    {
+
         $proAttrPrice = \App\Models\ProductsAttribute::where([ // from `products_attributes` table
             'product_id' => $product_id,
             'size'       => $size
@@ -91,7 +115,7 @@ class Product extends Model
             $final_price = $proAttrPrice['price'] - ($proAttrPrice['price'] * $catDetails['category_discount'] / 100);
             $discount = $proAttrPrice['price'] - $final_price; // the discount value = original price - price after discount
 
-        // Note: Didn't ACCOUNT FOR presence of discounts of BOTH `product_discount` (in `products` table) AND `category_discount` (in `categories` table) AT THE SAME TIME!!
+            // Note: Didn't ACCOUNT FOR presence of discounts of BOTH `product_discount` (in `products` table) AND `category_discount` (in `categories` table) AT THE SAME TIME!!
         } else { // there's no discount on neither `product_discount` (in `products` table) nor `category_discount` (in `categories` table)
             $final_price = $proAttrPrice['price'];
             $discount = 0;
@@ -107,7 +131,8 @@ class Product extends Model
 
 
 
-    public static function isProductNew($product_id) { 
+    public static function isProductNew($product_id)
+    {
         // Get the last (latest) three 3 added products ids
         $productIds = Product::select('id')->where('status', 1)->orderBy('id', 'Desc')->limit(3)->pluck('id');
         $productIds = json_decode(json_encode($productIds, true));
@@ -124,20 +149,23 @@ class Product extends Model
 
 
 
-    
-    public static function getProductImage($product_id) { // this method is used in front/orders/order_details.blade.php
+
+    public static function getProductImage($product_id)
+    { // this method is used in front/orders/order_details.blade.php
         $getProductImage = Product::select('product_image')->where('id', $product_id)->first()->toArray();
 
 
         return $getProductImage['product_image'];
     }
-    public function ratings() {
+    public function ratings()
+    {
         return $this->hasMany(Rating::class, 'product_id');
     }
 
-    
+
     // Note: We need to prevent orders (upon checkout and payment) of the 'disabled' products (`status` = 0), where the product ITSELF can be disabled in admin/products/products.blade.php (by checking the `products` database table) or a product's attribute (`stock`) can be disabled in 'admin/attributes/add_edit_attributes.blade.php' (by checking the `products_attributes` database table). We also prevent orders of the out of stock / sold-out products (by checking the `products_attributes` database table)
-    public static function getProductStatus($product_id) {
+    public static function getProductStatus($product_id)
+    {
         $getProductStatus = Product::select('status')->where('id', $product_id)->first();
 
 
@@ -145,8 +173,8 @@ class Product extends Model
     }
 
     // Delete a product from Cart if it's 'disabled' (`status` = 0) or it's out of stock (sold out)    
-    public static function deleteCartProduct($product_id) {
+    public static function deleteCartProduct($product_id)
+    {
         Cart::where('product_id', $product_id)->delete();
     }
-
 }

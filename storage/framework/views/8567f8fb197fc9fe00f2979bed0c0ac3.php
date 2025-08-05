@@ -14,14 +14,13 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo e(asset('assets/new_layout/css/style.css')); ?>">
-
+    
     <!-- Optional: DataTables, Toastr, etc. -->
-    <?php echo $__env->yieldPushContent('styles'); ?>
-    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-
-
-
+    
+    
+    
     <title>Admin Panel</title>
+    <?php echo $__env->yieldPushContent('styles'); ?>
     <!-- plugins:css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo e(url('admin/vendors/feather/feather.css')); ?>">
@@ -60,7 +59,9 @@
 </main>
 
 <!-- Scripts -->
-<!-- plugins:js -->
+
+<!-- jquery:js -->
+
 <script src="<?php echo e(url('admin/vendors/js/vendor.bundle.base.js')); ?>"></script>
 <!-- endinject -->
 <!-- Plugin js for this page -->

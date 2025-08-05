@@ -16,12 +16,6 @@
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-        <div class="upgrade-card">
-            <h3>Upgrade your<br>Dashcode</h3>
-            <p>Pro plan for better results</p>
-            <button class="upgrade-btn">Now</button>
-        </div>
-        
         <div class="stat-card">
             <div class="stat-header">
                 <div>

@@ -14,14 +14,13 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('assets/new_layout/css/style.css') }}">
-
+    
     <!-- Optional: DataTables, Toastr, etc. -->
-    @stack('styles')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-
-
+    
+    
+    
     <title>Admin Panel</title>
+    @stack('styles')
     <!-- plugins:css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url('admin/vendors/feather/feather.css') }}">
@@ -60,7 +59,9 @@
 </main>
 
 <!-- Scripts -->
-<!-- plugins:js -->
+{{-- @yield('scripts') --}}
+<!-- jquery:js -->
+
 <script src="{{ url('admin/vendors/js/vendor.bundle.base.js') }}"></script>
 <!-- endinject -->
 <!-- Plugin js for this page -->

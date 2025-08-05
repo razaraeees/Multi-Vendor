@@ -59,6 +59,7 @@ Route::prefix('/admin')->group(function() {
         Route::get('categories', [CategoryController::class, 'categories'])->middleware('adminType:superadmin');
         Route::post('update-category-status', [CategoryController::class, 'updateCategoryStatus'])->middleware('adminType:superadmin');
         Route::match(['get', 'post'], 'add-edit-category/{id?}', [CategoryController::class, 'addEditCategory'])->middleware('adminType:superadmin');
+        Route::get('get-parent-categories', [CategoryController::class, 'getParentCategories'])->name('admin.get-parent-categories');
         Route::get('append-categories-level', [CategoryController::class, 'appendCategoryLevel'])->middleware('adminType:superadmin');
         Route::get('delete-category/{id}', [CategoryController::class, 'deleteCategory'])->middleware('adminType:superadmin');
         Route::get('delete-category-image/{id}', [CategoryController::class, 'deleteCategoryImage'])->middleware('adminType:superadmin');

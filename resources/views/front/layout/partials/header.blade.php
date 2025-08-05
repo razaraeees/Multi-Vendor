@@ -81,18 +81,13 @@ $sections = \App\Models\Section::sections();
                 </div>
                 <div class="col-12 col-xl order-4 order-xl-0">
                     <div class="input-group flex-nowrap pb-3 pb-xl-0">
-                       <form class="input-group flex-nowrap pb-3 pb-xl-0" action="{{ url('/search-products') }}" method="get">
-                        <input 
-                            type="text" 
-                            class="form-control w-100 border-dark border border-3"
-                            placeholder="Search for Products"
-                            name="search"
-                            @if (isset($_REQUEST['search']) && !empty($_REQUEST['search'])) 
-                                value="{{ $_REQUEST['search'] }}" 
-                            @endif
-                        >
-                        <button class="btn btn-dark btn-ecomm border-3" type="submit">Search</button>
-                    </form>     
+                        <form class="input-group flex-nowrap pb-3 pb-xl-0" action="{{ url('/search-products') }}"
+                            method="get">
+                            <input type="text" class="form-control w-100 border-dark border border-3"
+                                placeholder="Search for Products" name="search"
+                                @if (isset($_REQUEST['search']) && !empty($_REQUEST['search'])) value="{{ $_REQUEST['search'] }}" @endif>
+                            <button class="btn btn-dark btn-ecomm border-3" type="submit">Search</button>
+                        </form>
                     </div>
                 </div>
                 <div class="col-auto d-none d-xl-flex">
@@ -108,13 +103,14 @@ $sections = \App\Models\Section::sections();
                     <div class="top-cart-icons">
                         <nav class="navbar navbar-expand">
                             <ul class="navbar-nav">
-                               <li class="nav-item dropdown dropdown-large">
-                                    <a href="#" class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative cart-link"
+                                <li class="nav-item dropdown dropdown-large">
+                                    <a href="#"
+                                        class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative cart-link"
                                         data-bs-toggle="dropdown">
                                         <i class='bx bx-user'></i>
                                     </a>
                                     <div class="dropdown-menu dropdown-menu-end" style="width: 200px">
-                                        @if(Auth::check())
+                                        @if (Auth::check())
                                             <a class="dropdown-item" href="{{ url('user/account') }}">
                                                 <i class="fas fa-user u-s-m-r-9"></i> My Account
                                             </a>
@@ -149,15 +145,15 @@ $sections = \App\Models\Section::sections();
                                     <a href="#"
                                         class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative cart-link"
                                         data-bs-toggle="dropdown">
-                                        
+
                                         {{-- 🔢 Dynamic Cart Item Count --}}
                                         <span class="alert-count">{{ totalCartItems() }}</span>
-                                        
+
                                         <i class='bx bx-shopping-bag'></i>
                                     </a>
-                                    
+
                                     @php
-                                        
+
                                         use App\Models\Cart;
 
                                         $cartItems = Cart::getCartItems();
@@ -184,7 +180,9 @@ $sections = \App\Models\Section::sections();
 
                                             <div class="dropdown-cart-item d-flex p-2 border-bottom">
                                                 <div class="flex-shrink-0">
-                                                    <img src="{{ asset('front/images/product_images/small/' . $product->product_image) }}" width="50" height="50" alt="{{ $product->product_name }}">
+                                                    <img src="{{ asset('front/images/product_images/small/' . $product->product_image) }}"
+                                                        width="50" height="50"
+                                                        alt="{{ $product->product_name }}">
                                                 </div>
                                                 <div class="flex-grow-1 ms-2">
                                                     <h6 class="mb-0">{{ $product->product_name }}</h6>
@@ -199,7 +197,8 @@ $sections = \App\Models\Section::sections();
                                         @endforelse
 
                                         <div class="d-grid p-3 border-top">
-                                            <a href="{{ url('checkout') }}" class="btn btn-dark btn-ecomm">CHECKOUT</a>
+                                            <a href="{{ url('checkout') }}"
+                                                class="btn btn-dark btn-ecomm">CHECKOUT</a>
                                         </div>
                                     </div>
                                 </li>
@@ -234,34 +233,41 @@ $sections = \App\Models\Section::sections();
                             </a>
                             <div class="dropdown-menu dropdown-large-menu">
                                 <div class="row">
-                                    @foreach ($sections as $section)
+                                    @forelse ($sections as $section)
                                         <div class="col-12 col-xl-4">
                                             <h6 class="large-menu-title fw-bold">{{ $section['name'] }}</h6>
                                             <ul class="list-unstyled">
-                                                @foreach ($section['categories'] as $category)
-                                                    <li><a href="{{ url($category['url']) }}">{{ $category['category_name'] }}</a></li>
+                                                @forelse ($section['categories'] as $category)
+                                                    <li>
+                                                        <a
+                                                            href="{{ url($category['url']) }}">{{ $category['category_name'] }}</a>
+                                                    </li>
 
                                                     {{-- Subcategories (if available) --}}
                                                     @if (!empty($category['subcategories']))
                                                         @foreach ($category['subcategories'] as $subcategory)
                                                             <li style="padding-left: 10px;">
-                                                                <a href="{{ url($subcategory['url']) }}"> — {{ $subcategory['category_name'] }}</a>
-                                                            </li> 
+                                                                <a href="{{ url($subcategory['url']) }}">—
+                                                                    {{ $subcategory['category_name'] }}</a>
+                                                            </li>
                                                         @endforeach
                                                     @endif
-
-                                                @endforeach
+                                                @empty
+                                                    <li class="text-muted"><em>No categories in
+                                                            {{ $section['name'] }}</em></li>
+                                                @endforelse
                                             </ul>
                                         </div>
-                                    @endforeach
-                                 
-                                    <!-- end col-3 -->
+                                    @empty
+                                        <div class="col-12 text-center">
+                                            <p class="text-muted my-3">Categories Not found.</p>
+                                        </div>
+                                    @endforelse
                                 </div>
-                                <!-- end row -->
                             </div>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link" href="{{ url('/shop') }}"> Shop 
+                            <a class="nav-link" href="{{ url('/shop') }}"> Shop
                             </a>
                         </li>
 
@@ -271,7 +277,7 @@ $sections = \App\Models\Section::sections();
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('contact') }}">Contact</a>
                         </li>
-                       
+
                     </ul>
                 </div>
             </div>

@@ -105,11 +105,11 @@
                                         </a>
 
                                         <!-- Add Images -->
-                                        <a href="{{ url('admin/add-images/' . $product['id']) }}"
+                                        {{-- <a href="{{ url('admin/add-images/' . $product['id']) }}"
                                            class="btn btn-sm btn-outline-success px-2 py-1"
                                            title="Add Images">
                                             <i class="fas fa-images"></i>
-                                        </a>
+                                        </a> --}}
 
                                         <!-- Delete Product -->
                                         <a href="JavaScript:void(0)"

@@ -6,6 +6,7 @@
         <div class="first-slider p-0">
             <div class="banner-slider owl-carousel owl-theme">
                 {{-- Loop through dynamic slider banners --}}
+
                 @foreach ($sliderBanners as $banner)
                     <div class="item">
                         <div class="position-relative">

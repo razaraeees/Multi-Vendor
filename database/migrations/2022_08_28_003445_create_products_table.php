@@ -15,13 +15,11 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-
-            $table->integer('section_id');
             $table->integer('category_id');
             $table->integer('brand_id');
-            $table->integer('vendor_id'); // in case the product has been added by a some vendor (And in case the product has been added by another entity like a superadmin, admin or subadmin, the value will be 0 zero)
-            $table->integer('admin_id'); // whether a vendor or a superadmin/admin/subadmin (from the `admins` table)
-            $table->string('admin_type'); // can be vendor, superadmin, admin or subadmin
+            $table->integer('vendor_id'); 
+            $table->integer('admin_id'); 
+            $table->string('admin_type'); 
             $table->string('product_name');
             $table->string('product_code');
             $table->string('product_color');
