@@ -95,14 +95,6 @@ Route::prefix('/admin')->group(function() {
         Route::get('delete-banner/{id}', [BannersController::class, 'deleteBanner'])->middleware('adminType:superadmin');
         Route::match(['get', 'post'], 'add-edit-banner/{id?}', [BannersController::class, 'addEditBanner'])->middleware('adminType:superadmin');
 
-        // Filters
-        Route::get('filters', [FilterController::class, 'filters'])->middleware('adminType:superadmin');
-        Route::post('update-filter-status', [FilterController::class, 'updateFilterStatus'])->middleware('adminType:superadmin');
-        Route::post('update-filter-value-status', [FilterController::class, 'updateFilterValueStatus'])->middleware('adminType:superadmin');
-        Route::get('filters-values', [FilterController::class, 'filtersValues'])->middleware('adminType:superadmin');
-        Route::match(['get', 'post'], 'add-edit-filter/{id?}', [FilterController::class, 'addEditFilter'])->middleware('adminType:superadmin');
-        Route::match(['get', 'post'], 'add-edit-filter-value/{id?}', [FilterController::class, 'addEditFilterValue'])->middleware('adminType:superadmin');
-        Route::post('category-filters', [FilterController::class, 'categoryFilters'])->middleware('adminType:superadmin');
 
         // Coupons
         Route::get('coupons', [CouponsController::class, 'coupons'])->middleware('adminType:superadmin');

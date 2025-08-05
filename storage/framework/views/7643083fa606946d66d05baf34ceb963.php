@@ -55,32 +55,25 @@
                 <i class="fas fa-chevron-right dropdown-arrow <?php echo e(Request::is('admin/sections*') || Request::is('admin/categories*') || Request::is('admin/products*') || Request::is('admin/brands*') || Request::is('admin/filters*') || Request::is('admin/coupons*') ? 'rotate' : ''); ?>"></i>
             </div>
             <div class="submenu <?php echo e(Request::is('admin/sections*') || Request::is('admin/categories*') || Request::is('admin/products*') || Request::is('admin/brands*') || Request::is('admin/filters*') || Request::is('admin/coupons*') ? 'show' : ''); ?>">
-                <a href="<?php echo e(url('admin/sections')); ?>" 
-                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/sections*') ? 'active' : ''); ?>">
-                    Sections
-                </a>
-                <a href="<?php echo e(url('admin/categories')); ?>" 
-                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/categories*') ? 'active' : ''); ?>">
-                    Categories
-                </a>
                 <a href="<?php echo e(url('admin/products')); ?>" 
                     class="submenu-item text-decoration-none <?php echo e(Request::is('admin/products*') ? 'active' : ''); ?>">
                     Products
                 </a>
-                <a href="<?php echo e(url('admin/brands')); ?>" 
-                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/brands*') ? 'active' : ''); ?>">
-                    Brands
+                <a href="<?php echo e(url('admin/categories')); ?>" 
+                class="submenu-item text-decoration-none <?php echo e(Request::is('admin/categories*') ? 'active' : ''); ?>">
+                Categories
+            </a>
+                
+            <a href="<?php echo e(url('admin/brands')); ?>" 
+            class="submenu-item text-decoration-none <?php echo e(Request::is('admin/brands*') ? 'active' : ''); ?>">
+            Brands
                 </a>
-                <a href="<?php echo e(url('admin/filters')); ?>" 
-                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/filters*') ? 'active' : ''); ?>">
-                    Filters
-                </a>
-                <a href="<?php echo e(url('admin/coupons')); ?>" 
-                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/coupons*') ? 'active' : ''); ?>">
-                    Coupons
+                <a href="<?php echo e(url('admin/sections')); ?>" 
+                    class="submenu-item text-decoration-none <?php echo e(Request::is('admin/sections*') ? 'active' : ''); ?>">
+                    Attributes
                 </a>
             </div>
-        <?php endif; ?>
+            <?php endif; ?>
 
         <!-- Vendor Details -->
         <?php if(Auth::guard('admin')->user()->type == 'vendor'): ?>

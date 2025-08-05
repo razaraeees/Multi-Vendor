@@ -47,12 +47,9 @@
     <!-- Filter Form -->
     <div class="card shadow-sm border-0">
         <div class="card-body p-4">
-            <form 
+            <form
                 action="{{ empty($filter['id']) ? url('admin/add-edit-filter') : url('admin/add-edit-filter/' . $filter['id']) }}"
-                method="POST"
-                enctype="multipart/form-data"
-                class="needs-validation"
-                novalidate>
+                method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
 
                 @csrf
 
@@ -62,26 +59,24 @@
 
                         <div class="form-group mb-4">
                             <label for="cat_ids">Select Categories</label>
-                            <select name="cat_ids[]" 
-                                    id="cat_ids" 
-                                    class="form-control @error('cat_ids') is-invalid @enderror" 
-                                    multiple 
-                                    style="height: 200px"
-                                    required>
+                            <select name="cat_ids[]" id="cat_ids"
+                                class="form-control @error('cat_ids') is-invalid @enderror" multiple style="height: 200px"
+                                required>
                                 <option value="" disabled>Select Categories</option>
-                                @foreach ($categories as $section)
-                                    <optgroup label="{{ $section['name'] }}">
-                                        @foreach ($section['categories'] as $category)
-                                            <option value="{{ $category['id'] }}" 
-                                                {{ (!empty($filter['category_id']) && $filter['category_id'] == $category['id']) ? 'selected' : '' }}>
-                                                {{ $category['category_name'] }}
+                                @foreach ($categories as $category)
+                                    <optgroup label="{{ $category['category_name'] }}">
+                                        {{-- Main Category --}}
+                                        <option value="{{ $category['id'] }}"
+                                            {{ !empty($filter['category_id']) && $filter['category_id'] == $category['id'] ? 'selected' : '' }}>
+                                            {{ $category['category_name'] }}
+                                        </option>
+
+                                        {{-- Subcategories --}}
+                                        @foreach ($category['subcategories'] as $subcategory)
+                                            <option value="{{ $subcategory['id'] }}"
+                                                {{ !empty($filter['category_id']) && $filter['category_id'] == $subcategory['id'] ? 'selected' : '' }}>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;-- {{ $subcategory['category_name'] }}
                                             </option>
-                                            @foreach ($category['sub_categories'] as $subcategory)
-                                                <option value="{{ $subcategory['id'] }}" 
-                                                    {{ (!empty($filter['category_id']) && $filter['category_id'] == $subcategory['id']) ? 'selected' : '' }}>
-                                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;{{ $subcategory['category_name'] }}
-                                                </option>
-                                            @endforeach
                                         @endforeach
                                     </optgroup>
                                 @endforeach
@@ -99,13 +94,9 @@
 
                         <div class="form-group mb-4">
                             <label for="filter_name">Filter Name</label>
-                            <input type="text"
-                                   class="form-control @error('filter_name') is-invalid @enderror"
-                                   id="filter_name"
-                                   name="filter_name"
-                                   placeholder="Enter Filter Name"
-                                   value="{{ old('filter_name', $filter['filter_name'] ?? '') }}"
-                                   required>
+                            <input type="text" class="form-control @error('filter_name') is-invalid @enderror"
+                                id="filter_name" name="filter_name" placeholder="Enter Filter Name"
+                                value="{{ old('filter_name', $filter['filter_name'] ?? '') }}" required>
                             <div class="invalid-feedback">
                                 Filter name is required.
                             </div>
@@ -113,14 +104,10 @@
 
                         <div class="form-group mb-4">
                             <label for="filter_column">Filter Column</label>
-                            <input type="text"
-                                   class="form-control @error('filter_column') is-invalid @enderror"
-                                   id="filter_column"
-                                   name="filter_column"
-                                   placeholder="e.g. brand, color, size"
-                                   value="{{ old('filter_column', $filter['filter_column'] ?? '') }}"
-                                   pattern="[a-z_]+"
-                                   required>
+                            <input type="text" class="form-control @error('filter_column') is-invalid @enderror"
+                                id="filter_column" name="filter_column" placeholder="e.g. brand, color, size"
+                                value="{{ old('filter_column', $filter['filter_column'] ?? '') }}" pattern="[a-z_]+"
+                                required>
                             <div class="small text-muted">Use lowercase letters and underscores only (no spaces)</div>
                             <div class="invalid-feedback">
                                 Filter column is required and must contain only lowercase letters and underscores.
@@ -150,7 +137,7 @@
             'use strict';
             const forms = document.querySelectorAll('.needs-validation');
             Array.from(forms).forEach(form => {
-                form.addEventListener('submit', function (event) {
+                form.addEventListener('submit', function(event) {
                     if (!form.checkValidity()) {
                         event.preventDefault();
                         event.stopPropagation();

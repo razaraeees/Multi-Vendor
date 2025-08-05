@@ -28,5 +28,8 @@ class AppServiceProvider extends ServiceProvider
         View::share('brands', Brand::with('products')->get());
         View::share('categories', Category::with('products')->get());
         View::share('colors', Product::select('product_color')->distinct()->pluck('product_color')->toArray());
+         View::composer('front.layout.header', function ($view) {
+            $view->with('categorys', Category::getCategories());
+        });
     }
 }

@@ -35,7 +35,6 @@
                             <th>Product Color</th>
                             <th>Product Image</th>
                             <th>Category</th>
-                            <th>Section</th>
                             <th>Added by</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -60,7 +59,6 @@
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo e($product['category']['category_name'] ?? 'No Category'); ?></td>
-                                <td><?php echo e($product['section']['name']); ?></td>
                                 <td>
                                     <?php if($product['admin_type'] == 'vendor'): ?>
                                         <a target="_blank"

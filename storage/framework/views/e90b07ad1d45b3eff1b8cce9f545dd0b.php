@@ -146,24 +146,13 @@ endif;
 unset($__errorArgs, $__bag); ?>"
                                         required>
                                         <option value="">Select Category</option>
-                                        <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <optgroup label="<?php echo e($section['name']); ?>">
-                                                <?php $__currentLoopData = $section['categories']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($category['id']); ?>"
-                                                        <?php echo e(!empty($product['category_id']) && $product['category_id'] == $category['id'] ? 'selected' : ''); ?>>
-                                                        <?php echo e($category['category_name']); ?>
+                                        <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($category['id']); ?>"
+                                                <?php echo e(!empty($product['category_id']) && $product['category_id'] == $category['id'] ? 'selected' : ''); ?>>
+                                                <?php echo e($category['path']); ?>
 
-                                                    </option>
-                                                    <?php $__currentLoopData = $category['sub_categories']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subcategory): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                        <option value="<?php echo e($subcategory['id']); ?>"
-                                                            <?php echo e(!empty($product['category_id']) && $product['category_id'] == $subcategory['id'] ? 'selected' : ''); ?>>
-                                                            &nbsp;&nbsp;&nbsp;-- <?php echo e($subcategory['category_name']); ?>
-
-                                                        </option>
-                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </optgroup>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                            </option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>     
                                     </select>
                                     <div class="invalid-feedback category-error"></div>
                                 </div>
@@ -416,7 +405,7 @@ unset($__errorArgs, $__bag); ?>">
     </form>
 <?php $__env->stopSection(); ?>
 <?php $__env->startPush('scripts'); ?>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
             // Initialize Select2 if available
@@ -592,7 +581,7 @@ unset($__errorArgs, $__bag); ?>">
                     // Validate file size (2MB)
                     if (file.size > 2 * 1024 * 1024) {
                         showAlert('error',
-                        `File "${file.name}" is too large. Maximum size is 2MB.`);
+                            `File "${file.name}" is too large. Maximum size is 2MB.`);
                         return;
                     }
 

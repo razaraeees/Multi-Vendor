@@ -15,9 +15,7 @@ use App\Models\Product;
 use App\Models\ProductsImage;
 use App\Models\ProductsFilter;
 use App\Models\ProductsAttribute;
-// use App\Models\ProductsImage;
 use Illuminate\Support\Facades\Log;
-
 
 class ProductsController extends Controller
 {
@@ -35,15 +33,14 @@ class ProductsController extends Controller
             }
         }
 
-        // ✅ Include 'images' relationship
+        // ✅ Fixed relationships
         $products = Product::with([
-            'section' => function ($query) {
-                $query->select('id', 'name');
-            },
             'category' => function ($query) {
                 $query->select('id', 'category_name');
             },
-            'images' // ✅ Add this line
+            'images' => function ($query) {
+                $query->select('id', 'product_id', 'image', 'status');
+            }
         ]);
 
         // If vendor, show only their products
@@ -58,21 +55,18 @@ class ProductsController extends Controller
 
     public function updateProductStatus(Request $request)
     {
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-            // dd($data);
+        if ($request->ajax()) {
+            $data = $request->all();
 
-            if ($data['status'] == 'Active') { // $data['status'] comes from the 'data' object inside the $.ajax() method    // reverse the 'status' from (ative/inactive) 0 to 1 and 1 to 0 (and vice versa)
+            if ($data['status'] == 'Active') {
                 $status = 0;
             } else {
                 $status = 1;
             }
 
+            Product::where('id', $data['product_id'])->update(['status' => $status]);
 
-            Product::where('id', $data['product_id'])->update(['status' => $status]); // $data['product_id'] comes from the 'data' object inside the $.ajax() method
-            // echo '<pre>', var_dump($data), '</pre>';
-
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
+            return response()->json([
                 'status'     => $status,
                 'product_id' => $data['product_id']
             ]);
@@ -88,17 +82,20 @@ class ProductsController extends Controller
         return redirect()->back()->with('success_message', $message);
     }
 
-
     public function addEditProduct(Request $request, $id = null)
     {
         try {
             // Check if editing existing product
             if ($id) {
-                $product = Product::with('product_images')->find($id);
+                $product = Product::with('images')->find($id);
                 if (!$product) {
-                    return $request->ajax()
-                        ? response()->json(['success' => false, 'message' => 'Product not found!'], 404)
-                        : redirect('admin/products')->with('error_message', 'Product not found!');
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product not found!'
+                        ], 404);
+                    }
+                    return redirect('admin/products')->with('error_message', 'Product not found!');
                 }
                 $title = 'Edit Product';
                 $message = 'Product updated successfully!';
@@ -108,43 +105,35 @@ class ProductsController extends Controller
                 $message = 'Product added successfully!';
             }
 
-            // Categories for dropdown
-            $categoriesData = Category::with('parent')->where('status', 1)->get();
-            $categoriesDropdown = $categoriesData->map(function ($cat) {
-                return [
-                    'id'   => $cat->id,
-                    'path' => $this->buildCategoryPath($cat)
-                ];
-            });
-
-            // Brands list
-            $brands = Brand::where('status', 1)->get();
-
-            // Handle AJAX form submission
             if ($request->ajax()) {
                 try {
+                    // Simple validation
                     $request->validate([
                         'category_id'   => 'required|exists:categories,id',
                         'product_name'  => 'required|string|max:255',
-                        'product_code'  => [
-                            'required',
-                            'string',
-                            'max:50',
-                            Rule::unique('products', 'product_code')->ignore($id)
-                        ],
+                        'product_code'  => 'required|string|max:50',
                         'product_price' => 'required|numeric|min:0',
                     ]);
 
                     $data = $request->all();
+
+                    // Get category details
+                    $category = Category::find($data['category_id']);
+                    if (!$category) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Invalid category selected!'
+                        ], 422);
+                    }
+
                     $user = Auth::guard('admin')->user();
 
-                    // Assign product data
+                    // ✅ Set admin info
                     $product->admin_id   = $user->id;
                     $product->admin_type = $user->type;
-                    $product->vendor_id  = $user->vendor_id ?? null;
 
-                    $category = Category::findOrFail($data['category_id']);
-                    $product->section_id       = $category->section_id;
+                    // ✅ Set vendor info (if applicable)
+                    $product->vendor_id = $user->vendor_id ?? null;
                     $product->category_id      = $data['category_id'];
                     $product->brand_id         = $data['brand_id'] ?? null;
                     $product->product_name     = $data['product_name'];
@@ -161,6 +150,8 @@ class ProductsController extends Controller
                     $product->is_featured      = $data['is_featured'] ?? 'No';
                     $product->is_bestseller    = $data['is_bestseller'] ?? 'No';
                     $product->status           = 1;
+
+                    // ✅ Save to database
                     $product->save();
 
                     // Handle Image Upload
@@ -171,30 +162,42 @@ class ProductsController extends Controller
                                     $extension = $image->getClientOriginalExtension();
                                     $imageName = 'product_' . time() . '_' . rand(1000, 9999) . '.' . $extension;
 
-                                    $imagePath  = public_path('front/images/product_images');
-                                    $smallPath  = $imagePath . '/small';
-                                    $mediumPath = $imagePath . '/medium';
-                                    $largePath  = $imagePath . '/large';
+                                    // Create directories if they don't exist
+                                    $imagePath = public_path('front/images/product_images');
+                                    $smallPath = public_path('front/images/product_images/small');
+                                    $mediumPath = public_path('front/images/product_images/medium');
+                                    $largePath = public_path('front/images/product_images/large');
 
-                                    foreach ([$imagePath, $smallPath, $mediumPath, $largePath] as $path) {
-                                        if (!file_exists($path)) {
-                                            mkdir($path, 0755, true);
-                                        }
+                                    if (!file_exists($imagePath)) {
+                                        mkdir($imagePath, 0755, true);
+                                    }
+                                    if (!file_exists($smallPath)) {
+                                        mkdir($smallPath, 0755, true);
+                                    }
+                                    if (!file_exists($mediumPath)) {
+                                        mkdir($mediumPath, 0755, true);
+                                    }
+                                    if (!file_exists($largePath)) {
+                                        mkdir($largePath, 0755, true);
                                     }
 
+                                    // Move original image
                                     $image->move($imagePath, $imageName);
+
+                                    // Copy to other sizes (you can customize this)
                                     copy($imagePath . '/' . $imageName, $smallPath . '/' . $imageName);
                                     copy($imagePath . '/' . $imageName, $mediumPath . '/' . $imageName);
                                     copy($imagePath . '/' . $imageName, $largePath . '/' . $imageName);
 
-                                    ProductsImage::create([
-                                        'product_id' => $product->id,
-                                        'image'      => $imageName,
-                                        'status'     => 1
-                                    ]);
+                                    // Save to database
+                                    $productImage = new ProductsImage();
+                                    $productImage->product_id = $product->id;
+                                    $productImage->image = $imageName;
+                                    $productImage->status = 1;
+                                    $productImage->save();
                                 } catch (\Exception $e) {
                                     Log::error('Image Upload Error: ' . $e->getMessage());
-                                    continue;
+                                    continue; // Skip this image and continue
                                 }
                             }
                         }
@@ -209,6 +212,7 @@ class ProductsController extends Controller
                                 $videoName = 'product_video_' . time() . '_' . rand(1000, 9999) . '.' . $extension;
                                 $videoPath = public_path('front/videos/product_videos');
 
+                                // Create directory if it doesn't exist
                                 if (!file_exists($videoPath)) {
                                     mkdir($videoPath, 0755, true);
                                 }
@@ -218,81 +222,99 @@ class ProductsController extends Controller
                                 $product->save();
                             } catch (\Exception $e) {
                                 Log::error('Video Upload Error: ' . $e->getMessage());
+                                // Don't return error, just log it
                             }
                         }
                     }
 
                     return response()->json([
-                        'success'  => true,
-                        'message'  => $message,
+                        'success' => true,
+                        'message' => $message,
                         'redirect' => url('admin/products')
                     ]);
                 } catch (\Illuminate\Validation\ValidationException $e) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Validation failed',
-                        'errors'  => $e->errors()
+                        'errors' => $e->errors()
                     ], 422);
                 } catch (\Exception $e) {
                     Log::error('Product Save Error: ' . $e->getMessage());
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Something went wrong. Please try again.',
-                        'error'   => $e->getMessage()
+                        'error' => $e->getMessage()
                     ], 500);
                 }
             }
 
-            // Non-AJAX Request → Show form
-            return view('admin.products.add_edit_product', compact('title', 'product', 'categoriesDropdown', 'brands'));
+            // Load data for form (Non-AJAX request)
+            try {
+                $categories = $this->getCategoriesWithPath();
+                $brands = Brand::where('status', 1)->get()->toArray();
+            } catch (\Exception $e) {
+                Log::error('Data Load Error: ' . $e->getMessage());
+                $categories = [];
+                $brands = [];
+            }
+
+            return view('admin.products.add_edit_product', compact('title', 'product', 'categories', 'brands'));
         } catch (\Exception $e) {
             Log::error('Controller Error: ' . $e->getMessage());
 
-            return $request->ajax()
-                ? response()->json(['success' => false, 'message' => 'System error occurred. Please try again.', 'error' => $e->getMessage()], 500)
-                : redirect('admin/products')->with('error_message', 'Error loading product form.');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'System error occurred. Please try again.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+
+            return redirect('admin/products')->with('error_message', 'Error loading product form.');
         }
+    }
+
+    private function getCategoriesWithPath()
+    {
+        // Sirf leaf categories (jo categories ke andar koi sub-category nahi hai)
+        $categories = Category::with(['children', 'parentCategory'])
+            ->where('status', 1)
+            ->get();
+
+        $categoriesWithPath = [];
+
+        foreach ($categories as $category) {
+            // Check if category has no children (leaf node)
+            if ($category->children->isEmpty()) {
+                $categoriesWithPath[] = [
+                    'id' => $category->id,
+                    'path' => $this->buildCategoryPath($category),
+                ];
+            }
+        }
+
+        // Sort by path
+        usort($categoriesWithPath, function ($a, $b) {
+            return strcmp($a['path'], $b['path']);
+        });
+
+        return $categoriesWithPath;
     }
 
     private function buildCategoryPath($category)
     {
-        $path = $category->category_name;
-        $parent = $category->parent;
-        while ($parent) {
-            $path = $parent->category_name . ' > ' . $path;
-            $parent = $parent->parent;
+        if ($category->parentCategory && $category->parent_id != 0) {
+            return $this->buildCategoryPath($category->parentCategory) . ' > ' . $category->category_name;
         }
-        return $path;
+
+        return $category->category_name;
     }
 
-
-    // public function deleteProductImage($id)
-    // {
-    //     $image = ProductsImage::findOrFail($id); // Find the image from products_images table
-
-    //     $paths = [
-    //         public_path('front/images/product_images/small/' . $image->image),
-    //         public_path('front/images/product_images/medium/' . $image->image),
-    //         public_path('front/images/product_images/large/' . $image->image),
-    //     ];
-
-    //     foreach ($paths as $path) {
-    //         if (file_exists($path)) {
-    //             unlink($path);
-    //         }
-    //     }
-
-    //     $image->delete();
-
-
-    //     return redirect()->back()->with('success_message', $message);
-    // }
-
     public function deleteProductVideo($id)
-    { // AJAX call from admin/js/custom.js    // Delete the product video from BOTH SERVER (FILESYSTEM) & DATABASE    // $id is passed as a Route Parameter    
+    {
         // Get the product video record stored in the database
         $productVideo = Product::select('product_video')->where('id', $id)->first();
-        // dd($productVideo);
 
         // Get the product video path on the server (filesystem)
         $product_video_path = 'front/videos/product_videos/';
@@ -302,7 +324,7 @@ class ProductsController extends Controller
             unlink($product_video_path . $productVideo->product_video);
         }
 
-        // Delete the product video name (record) from the `products` database table (Note: We won't use delete() method because we're not deleting a complete record (entry) (we're just deleting a one column `product_video` value), we will just use update() method to update the `product_video` name to an empty string value '')
+        // Delete the product video name (record) from the `products` database table
         Product::where('id', $id)->update(['product_video' => '']);
 
         $message = 'Product Video has been deleted successfully!';
@@ -314,38 +336,33 @@ class ProductsController extends Controller
     {
         Session::put('page', 'products');
 
-        $product = Product::select('id', 'product_name', 'product_code', 'product_color', 'product_price', 'product_image')->with('attributes')->find($id); // with('attributes') is the relationship method name in the Product.php model
+        $product = Product::select('id', 'product_name', 'product_code', 'product_color', 'product_price', 'product_image')->with('attributes')->find($id);
 
-        if ($request->isMethod('post')) { // When the <form> is submitted
+        if ($request->isMethod('post')) {
             $data = $request->all();
-            // dd($data);
 
-            foreach ($data['sku'] as $key => $value) { // or instead could be: $data['size'], $data['price'] or $data['stock']
-                // echo '<pre>', var_dump($key), '</pre>';
-                // echo '<pre>', var_dump($value), '</pre>';
-
+            foreach ($data['sku'] as $key => $value) {
                 if (!empty($value)) {
                     // Validation:
-                    // SKU duplicate check (Prevent duplicate SKU) because SKU is UNIQUE for every product
+                    // SKU duplicate check
                     $skuCount = ProductsAttribute::where('sku', $value)->count();
-                    if ($skuCount > 0) { // if there's an SKU for the product ALREADY EXISTING
+                    if ($skuCount > 0) {
                         return redirect()->back()->with('error_message', 'SKU already exists! Please add another SKU!');
                     }
 
-                    // Size duplicate check (Prevent duplicate Size) because Size is UNIQUE for every product
+                    // Size duplicate check
                     $sizeCount = ProductsAttribute::where(['product_id' => $id, 'size' => $data['size'][$key]])->count();
-                    if ($sizeCount > 0) { // if there's an SKU for the product ALREADY EXISTING
+                    if ($sizeCount > 0) {
                         return redirect()->back()->with('error_message', 'Size already exists! Please add another Size!');
                     }
 
-
                     $attribute = new ProductsAttribute;
 
-                    $attribute->product_id = $id; // $id is passed in up there to the addAttributes() method
+                    $attribute->product_id = $id;
                     $attribute->sku        = $value;
-                    $attribute->size       = $data['size'][$key];  // $key denotes the iteration/loop cycle number (0, 1, 2, ...), e.g. $data['size'][0]
-                    $attribute->price      = $data['price'][$key]; // $key denotes the iteration/loop cycle number (0, 1, 2, ...), e.g. $data['price'][0]
-                    $attribute->stock      = $data['stock'][$key]; // $key denotes the iteration/loop cycle number (0, 1, 2, ...), e.g. $data['stock'][0]
+                    $attribute->size       = $data['size'][$key];
+                    $attribute->price      = $data['price'][$key];
+                    $attribute->stock      = $data['stock'][$key];
                     $attribute->status     = 1;
 
                     $attribute->save();
@@ -354,26 +371,23 @@ class ProductsController extends Controller
             return redirect()->back()->with('success_message', 'Product Attributes have been addded successfully!');
         }
 
-
         return view('admin.attributes.add_edit_attributes')->with(compact('product'));
     }
 
     public function updateAttributeStatus(Request $request)
-    { // Update Attribute Status using AJAX in add_edit_attributes.blade.php
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-            // dd($data);
+    {
+        if ($request->ajax()) {
+            $data = $request->all();
 
-            if ($data['status'] == 'Active') { // $data['status'] comes from the 'data' object inside the $.ajax() method    // reverse the 'status' from (ative/inactive) 0 to 1 and 1 to 0 (and vice versa)
+            if ($data['status'] == 'Active') {
                 $status = 0;
             } else {
                 $status = 1;
             }
 
+            ProductsAttribute::where('id', $data['attribute_id'])->update(['status' => $status]);
 
-            ProductsAttribute::where('id', $data['attribute_id'])->update(['status' => $status]); // $data['attribute_id'] comes from the 'data' object inside the $.ajax() method
-
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
+            return response()->json([
                 'status'       => $status,
                 'attribute_id' => $data['attribute_id']
             ]);
@@ -384,9 +398,8 @@ class ProductsController extends Controller
     {
         Session::put('page', 'products');
 
-        if ($request->isMethod('post')) { // if the <form> is submitted
+        if ($request->isMethod('post')) {
             $data = $request->all();
-            // dd($data);
 
             foreach ($data['attributeId'] as $key => $attribute) {
                 if (!empty($attribute)) {
@@ -403,81 +416,20 @@ class ProductsController extends Controller
         }
     }
 
-    // public function addImages(Request $request, $id)
-    // { // $id is the URL Paramter (slug) passed from the URL
-    //     Session::put('page', 'products');
-
-    //     $product = Product::select('id', 'product_name', 'product_code', 'product_color', 'product_price', 'product_image')->with('images')->find($id); // with('images') is the relationship method name in the Product.php model
-
-
-    //     if ($request->isMethod('post')) { // if the <form> is submitted
-    //         $data = $request->all();
-    //         // dd($data);
-
-    //         if ($request->hasFile('images')) {
-    //             $images = $request->file('images');
-    //             // dd($images);
-
-    //             foreach ($images as $key => $image) {
-    //                 // Uploading the images:
-    //                 // Generate Temp Image
-    //                 $image_tmp = Image::make($image);
-
-    //                 // Get image name
-    //                 $image_name = $image->getClientOriginalName();
-    //                 // dd($image_tmp);
-
-    //                 // Get image extension
-    //                 $extension = $image->getClientOriginalExtension();
-
-    //                 // Generate a new random name for the uploaded image (to avoid that the image might get overwritten if its name is repeated)
-    //                 $imageName = $image_name . rand(111, 99999) . '.' . $extension; // e.g. 5954.png
-
-    //                 // Assigning the uploaded images path inside the 'public' folder
-    //                 // We will have three folders: small, medium and large, depending on the images sizes
-    //                 $largeImagePath  = 'front/images/product_images/large/'  . $imageName; // 'large'  images folder
-    //                 $mediumImagePath = 'front/images/product_images/medium/' . $imageName; // 'medium' images folder
-    //                 $smallImagePath  = 'front/images/product_images/small/'  . $imageName; // 'small'  images folder
-
-    //                 // Upload the image using the 'Intervention' package and save it in our THREE paths (folders) inside the 'public' folder
-    //                 Image::make($image_tmp)->resize(1000, 1000)->save($largeImagePath);  // resize the 'large'  image size then store it in the 'large'  folder
-    //                 Image::make($image_tmp)->resize(500,   500)->save($mediumImagePath); // resize the 'medium' image size then store it in the 'medium' folder
-    //                 Image::make($image_tmp)->resize(250,   250)->save($smallImagePath);  // resize the 'small'  image size then store it in the 'small'  folder
-
-    //                 // Insert the image name in the database table `products_images`
-    //                 $image = new ProductsImage;
-
-    //                 $image->image      = $imageName;
-    //                 $image->product_id = $id;
-    //                 $image->status     = 1;
-
-    //                 $image->save();
-    //             }
-    //         }
-
-    //         return redirect()->back()->with('success_message', 'Product Images have been added successfully!');
-    //     }
-
-
-    //     return view('admin.images.add_images')->with(compact('product'));
-    // }
-
     public function updateImageStatus(Request $request)
-    { // Update Image Status using AJAX in add_images.blade.php
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-            // dd($data);
+    {
+        if ($request->ajax()) {
+            $data = $request->all();
 
-            if ($data['status'] == 'Active') { // $data['status'] comes from the 'data' object inside the $.ajax() method    // reverse the 'status' from (ative/inactive) 0 to 1 and 1 to 0 (and vice versa)
+            if ($data['status'] == 'Active') {
                 $status = 0;
             } else {
                 $status = 1;
             }
 
+            ProductsImage::where('id', $data['image_id'])->update(['status' => $status]);
 
-            ProductsImage::where('id', $data['image_id'])->update(['status' => $status]); // $data['image_id'] comes from the 'data' object inside the $.ajax() method
-
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
+            return response()->json([
                 'status'   => $status,
                 'image_id' => $data['image_id']
             ]);
@@ -485,34 +437,29 @@ class ProductsController extends Controller
     }
 
     public function deleteImage($id)
-    { // AJAX call from admin/js/custom.js    // Delete the product image from BOTH SERVER (FILESYSTEM) & DATABASE    // $id is passed as a Route Parameter    
+    {
         // Get the product image record stored in the database
         $productImage = ProductsImage::select('image')->where('id', $id)->first();
-        // dd($productImage);
 
-        // Get the product image three paths on the server (filesystem) ('small', 'medium' and 'large' folders)
+        // Get the product image three paths on the server (filesystem)
         $small_image_path  = 'front/images/product_images/small/';
         $medium_image_path = 'front/images/product_images/medium/';
         $large_image_path  = 'front/images/product_images/large/';
 
-        // Delete the product images on server (filesystem) (from the the THREE folders)
-        // First: Delete from the 'small' folder
+        // Delete the product images on server (filesystem)
         if (file_exists($small_image_path . $productImage->image)) {
             unlink($small_image_path . $productImage->image);
         }
 
-        // Second: Delete from the 'medium' folder
         if (file_exists($medium_image_path . $productImage->image)) {
             unlink($medium_image_path . $productImage->image);
         }
 
-        // Third: Delete from the 'large' folder
         if (file_exists($large_image_path . $productImage->image)) {
             unlink($large_image_path . $productImage->image);
         }
 
-
-        // Delete the product image name (record) from the `products_images` database table
+        // Delete the product image name (record) from the database
         ProductsImage::where('id', $id)->delete();
 
         $message = 'Product Image has been deleted successfully!';

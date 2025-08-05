@@ -125,10 +125,11 @@ class FilterController extends Controller
             return redirect('admin/filters')->with('success_message', $message); // $message was defined in the first if-else statement (in case Add or Update cases)
         }
 
-
-        // Note: Dynamic Filters are applied to `categories` (parent categories and subcategories (child categories)), and not `sections`!
-        // Get ALL the Sections with their Categories and Subcategories (Get all sections with its categories and subcategories) to select them while adding or updating a filter (to select the fitler's respective categories)    // $categories are ALL the `sections` with their related 'parent' categories (if any (if exist)) and their subcategories or 'child' categories (if any (if exist))    
-        $categories = \App\Models\Section::with('categories')->get()->toArray(); // with('categories') is the relationship method name in the Section.php Model
+        $categories = \App\Models\Category::with('subcategories')
+            ->where('parent_id', 0) // sirf main categories
+            ->where('status', 1)    // active categories
+            ->get()
+            ->toArray(); // with('categories') is the relationship method name in the Section.php Model
         // dd($categories);
 
 

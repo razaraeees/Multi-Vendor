@@ -142,11 +142,10 @@
                                                 {{ !empty($product['category_id']) && $product['category_id'] == $category['id'] ? 'selected' : '' }}>
                                                 {{ $category['path'] }}
                                             </option>
-                                        @endforeach
+                                        @endforeach     
                                     </select>
                                     <div class="invalid-feedback category-error"></div>
                                 </div>
-
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-4">

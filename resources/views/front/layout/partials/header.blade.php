@@ -1,6 +1,6 @@
 <?php
 // Getting the 'enabled' sections ONLY and their child categories (using the 'categories' relationship method) which, in turn, include their 'subcategories`
-$sections = \App\Models\Section::sections();
+$categorys = \App\Models\Category::categories();
 // dd($sections);
 ?>
 
@@ -233,38 +233,53 @@ $sections = \App\Models\Section::sections();
                             </a>
                             <div class="dropdown-menu dropdown-large-menu">
                                 <div class="row">
-                                    @forelse ($sections as $section)
+                                    @foreach ($categorys as $cat)
                                         <div class="col-12 col-xl-4">
-                                            <h6 class="large-menu-title fw-bold">{{ $section['name'] }}</h6>
-                                            <ul class="list-unstyled">
-                                                @forelse ($section['categories'] as $category)
-                                                    <li>
-                                                        <a
-                                                            href="{{ url($category['url']) }}">{{ $category['category_name'] }}</a>
-                                                    </li>
+                                            <h6 class="large-menu-title fw-bold">
+                                                <a href="{{ url($cat->url) }}">{{ $cat->category_name }}</a>
+                                                @if ($cat->subcategories->count())
+                                                    <button class="toggle-submenu"
+                                                        data-target="sub-{{ $cat->id }}">
+                                                        <i class="bi bi-chevron-down"></i>
+                                                    </button>
+                                                @endif
+                                            </h6>
 
-                                                    {{-- Subcategories (if available) --}}
-                                                    @if (!empty($category['subcategories']))
-                                                        @foreach ($category['subcategories'] as $subcategory)
-                                                            <li style="padding-left: 10px;">
-                                                                <a href="{{ url($subcategory['url']) }}">—
-                                                                    {{ $subcategory['category_name'] }}</a>
-                                                            </li>
-                                                        @endforeach
-                                                    @endif
-                                                @empty
-                                                    <li class="text-muted"><em>No categories in
-                                                            {{ $section['name'] }}</em></li>
-                                                @endforelse
-                                            </ul>
+                                            @if ($cat->subcategories->count())
+                                                <ul class="list-unstyled submenu" id="sub-{{ $cat->id }}"
+                                                    style="display:none;">
+                                                    @foreach ($cat->subcategories as $subcategory)
+                                                        <li>
+                                                            <a
+                                                                href="{{ url($subcategory->url) }}">{{ $subcategory->category_name }}</a>
+
+                                                            {{-- Agar sub-subcategories hain --}}
+                                                            @if ($subcategory->subcategories->count())
+                                                                <button class="toggle-submenu"
+                                                                    data-target="sub-{{ $subcategory->id }}">
+                                                                    <i class="bi bi-chevron-down"></i>
+                                                                </button>
+
+                                                                <ul class="list-unstyled submenu"
+                                                                    id="sub-{{ $subcategory->id }}"
+                                                                    style="display:none; padding-left:15px;">
+                                                                    @foreach ($subcategory->subcategories as $child)
+                                                                        <li>
+                                                                            <a href="{{ url($child->url) }}">—
+                                                                                {{ $child->category_name }}</a>
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            @endif
                                         </div>
-                                    @empty
-                                        <div class="col-12 text-center">
-                                            <p class="text-muted my-3">Categories Not found.</p>
-                                        </div>
-                                    @endforelse
+                                    @endforeach
                                 </div>
                             </div>
+
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link" href="{{ url('/shop') }}"> Shop
@@ -284,3 +299,37 @@ $sections = \App\Models\Section::sections();
         </nav>
     </div>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-submenu").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            let target = document.getElementById(this.dataset.target);
+            if (target.style.display === "none" || target.style.display === "") {
+                target.style.display = "block";
+                this.innerHTML = '<i class="bi bi-chevron-up"></i>';
+            } else {
+                target.style.display = "none";
+                this.innerHTML = '<i class="bi bi-chevron-down"></i>';
+            }
+        });
+    });
+});
+</script>
+<style>
+/* Dropdown hover */
+.dropdown:hover > .dropdown-menu {
+    display: block;
+}
+.dropdown-menu {
+    min-width: 220px;
+}
+.dropdown-submenu {
+    position: relative;
+}
+.dropdown-submenu:hover .dropdown-menu {
+    display: block;
+    top: 0;
+    left: 100%;
+}
+</style>

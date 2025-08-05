@@ -55,32 +55,25 @@
                 <i class="fas fa-chevron-right dropdown-arrow {{ Request::is('admin/sections*') || Request::is('admin/categories*') || Request::is('admin/products*') || Request::is('admin/brands*') || Request::is('admin/filters*') || Request::is('admin/coupons*') ? 'rotate' : '' }}"></i>
             </div>
             <div class="submenu {{ Request::is('admin/sections*') || Request::is('admin/categories*') || Request::is('admin/products*') || Request::is('admin/brands*') || Request::is('admin/filters*') || Request::is('admin/coupons*') ? 'show' : '' }}">
-                <a href="{{ url('admin/sections') }}" 
-                    class="submenu-item text-decoration-none {{ Request::is('admin/sections*') ? 'active' : '' }}">
-                    Sections
-                </a>
-                <a href="{{ url('admin/categories') }}" 
-                    class="submenu-item text-decoration-none {{ Request::is('admin/categories*') ? 'active' : '' }}">
-                    Categories
-                </a>
                 <a href="{{ url('admin/products') }}" 
                     class="submenu-item text-decoration-none {{ Request::is('admin/products*') ? 'active' : '' }}">
                     Products
                 </a>
-                <a href="{{ url('admin/brands') }}" 
-                    class="submenu-item text-decoration-none {{ Request::is('admin/brands*') ? 'active' : '' }}">
-                    Brands
+                <a href="{{ url('admin/categories') }}" 
+                class="submenu-item text-decoration-none {{ Request::is('admin/categories*') ? 'active' : '' }}">
+                Categories
+            </a>
+                
+            <a href="{{ url('admin/brands') }}" 
+            class="submenu-item text-decoration-none {{ Request::is('admin/brands*') ? 'active' : '' }}">
+            Brands
                 </a>
-                <a href="{{ url('admin/filters') }}" 
-                    class="submenu-item text-decoration-none {{ Request::is('admin/filters*') ? 'active' : '' }}">
-                    Filters
-                </a>
-                <a href="{{ url('admin/coupons') }}" 
-                    class="submenu-item text-decoration-none {{ Request::is('admin/coupons*') ? 'active' : '' }}">
-                    Coupons
+                <a href="{{ url('admin/sections') }}" 
+                    class="submenu-item text-decoration-none {{ Request::is('admin/sections*') ? 'active' : '' }}">
+                    Attributes
                 </a>
             </div>
-        @endif
+            @endif
 
         <!-- Vendor Details -->
         @if (Auth::guard('admin')->user()->type == 'vendor')

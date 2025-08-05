@@ -34,7 +34,6 @@
                             <th>Product Color</th>
                             <th>Product Image</th>
                             <th>Category</th>
-                            <th>Section</th>
                             <th>Added by</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -59,7 +58,6 @@
                                     @endif
                                 </td>
                                 <td>{{ $product['category']['category_name'] ?? 'No Category' }}</td>
-                                <td>{{ $product['section']['name'] }}</td>
                                 <td>
                                     @if ($product['admin_type'] == 'vendor')
                                         <a target="_blank"
