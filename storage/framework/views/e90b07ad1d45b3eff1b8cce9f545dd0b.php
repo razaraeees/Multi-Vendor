@@ -2,6 +2,84 @@
 
 <?php $__env->startPush('name'); ?>
     <style>
+        #attribute_value_id {
+            background-color: #fff;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        #attribute_value_id option {
+            padding: 8px 10px;
+            transition: background-color 0.2s;
+        }
+
+        #attribute_value_id option:hover {
+            background-color: #f8f9fa;
+        }
+
+        .form-control:focus~.text-muted {
+            opacity: 0.8;
+        }
+
+        /* ✅ Category and Brand Select Padding Fix */
+        #category_id,
+        #brand_id {
+            padding: 12px 16px !important;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+            background-color: #fff;
+            font-size: 14px;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+        }
+
+        #category_id:focus,
+        #brand_id:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        #category_id option,
+        #brand_id option {
+            padding: 10px 16px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Form Group Spacing Fix */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Select2 Integration (if using Select2) */
+        .select2-container--default .select2-selection--single {
+            padding: 15px 20px !important;
+            border: 2px solid #e9ecef !important;
+            border-radius: 6px !important;
+            height: auto !important;
+            min-height: 46px !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 4px !important;
+            padding-right: 20px !important;
+            line-height: 1.5 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            right: 8px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -64,6 +142,25 @@
             right: 20px;
             z-index: 1050;
             min-width: 300px;
+        }
+
+        /* Better Form Control Consistency */
+        .form-control {
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Textarea Styling */
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
         }
     </style>
 <?php $__env->stopPush(); ?>
@@ -134,17 +231,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-4">
-                                    <label for="category_id" class="fw-bold">Select Category</label>
+                                    <label for="category_id" class="fw-bold">Select Category <span
+                                            class="text-danger">*</span></label>
                                     <select name="category_id" id="category_id"
-                                        class="form-control shadow-sm border-primary <?php $__errorArgs = ['category_id'];
+                                        class="form-control <?php $__errorArgs = ['category_id'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
-unset($__errorArgs, $__bag); ?>"
-                                        required>
+unset($__errorArgs, $__bag); ?>" required>
                                         <option value="">Select Category</option>
                                         <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <option value="<?php echo e($category['id']); ?>"
@@ -152,14 +249,14 @@ unset($__errorArgs, $__bag); ?>"
                                                 <?php echo e($category['path']); ?>
 
                                             </option>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>     
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>
                                     <div class="invalid-feedback category-error"></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-4">
-                                    <label for="brand_id">Select Brand</label>
+                                    <label for="brand_id" class="fw-bold">Select Brand</label>
                                     <select name="brand_id" id="brand_id"
                                         class="form-control <?php $__errorArgs = ['brand_id'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -201,6 +298,35 @@ unset($__errorArgs, $__bag); ?>">
                                     <input type="text" class="form-control" id="product_code" name="product_code"
                                         value="<?php echo e($product['product_code'] ?? old('product_code')); ?>" required>
                                     <div class="invalid-feedback product-code-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="stock">Product Stock</label>
+                                    <input type="number" class="form-control" id="stock" name="stock"
+                                        value="<?php echo e($product['stock'] ?? old('stock')); ?>" required>
+                                    <div class="invalid-feedback product-stock-error"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="stock_status" class="fw-bold">Stock Status</label>
+                                    <select name="stock_status" id="stock_status"
+                                        class="form-control <?php $__errorArgs = ['stock_status'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                                        <option value="">Select Brand</option>
+                                        <option value="0">Stock Available</option>
+                                            <option value="1">Out Of Stock</option>
+                                    </select>
+                                    <div class="invalid-feedback stock-error"></div>
                                 </div>
                             </div>
                         </div>
@@ -400,398 +526,626 @@ unset($__errorArgs, $__bag); ?>">
                         <?php endif; ?>
                     </div>
                 </div>
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary">Attribute Selection</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Single Select: Attribute -->
+                        <div class="form-group mb-3">
+                            <label for="attribute_id" class="font-weight-bold">Select Attribute</label>
+                            <select name="attribute_id" id="attribute_id" class="form-control">
+                                <option value="" disabled selected>-- Choose Attribute --</option>
+                                <?php $__currentLoopData = $attributes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $attr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($attr->id); ?>"><?php echo e($attr->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+
+                        <!-- Multiple Select: Attribute Values -->
+                        <div class="form-group mb-3">
+                            <label for="attribute_value_id" class="font-weight-bold">Select Values (Multiple)</label>
+                            <select name="attribute_value_id[]" id="attribute_value_id" class="form-control" multiple
+                                style="min-height: 140px; border-radius: 6px;" disabled>
+                                <option value="" disabled selected>-- Select Attribute First --</option>
+                            </select>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle text-info mr-1"></i>
+                                Hold <strong>Ctrl</strong> to select multiple values.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
 <?php $__env->stopSection(); ?>
 <?php $__env->startPush('scripts'); ?>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize Select2 if available
-            if ($.fn.select2) {
-                $('#category_id').select2({
-                    placeholder: "Select Category",
-                    allowClear: true
-                });
-                $('#brand_id').select2({
-                    placeholder: "Select Brand",
-                    allowClear: true
-                });
+<script>
+    $(document).ready(function() {
+        console.log('Product form JavaScript initialized');
+
+        // ============ LOAD EXISTING ATTRIBUTES ON PAGE LOAD (FOR EDIT) ============
+        // Check if we're editing a product and have existing attributes
+        const productId = "<?php echo e(isset($product) && !empty($product->id) ? $product->id : ''); ?>";
+        
+        if (productId) {
+            console.log('Edit mode detected for product ID:', productId);
+            loadExistingAttributes(productId);
+        }
+        
+        function loadExistingAttributes(productId) {
+            $.ajax({
+                url: "<?php echo e(url('admin/get-product-attributes')); ?>/" + productId,
+                type: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                },
+                success: function(response) {
+                    console.log('Existing attributes response:', response);
+                    
+                    if (response.success && response.data && response.data.length > 0) {
+                        const firstAttr = response.data[0];
+                        const attributeId = firstAttr.attribute_id;
+                        const valueIds = response.data.map(attr => attr.attribute_value_id.toString());
+                        
+                        console.log('Setting attribute ID:', attributeId);
+                        console.log('Setting value IDs:', valueIds);
+                        
+                        // Set the attribute dropdown
+                        $('#attribute_id').val(attributeId);
+                        
+                        // Load the values for this attribute with pre-selection
+                        loadAttributeValues(attributeId, valueIds);
+                    } else {
+                        console.log('No existing attributes found');
+                    }
+                },
+                error: function(xhr) {
+                    console.log('Error loading existing attributes:', xhr.responseText);
+                }
+            });
+        }
+
+        // ============ ATTRIBUTE VALUES AJAX ============
+        let fetchValuesUrl = "<?php echo e(url('admin/attribute-values')); ?>";
+        
+        $('#attribute_id').on('change', function() {
+            let attributeId = $(this).val();
+            console.log("Selected Attribute ID:", attributeId);
+            loadAttributeValues(attributeId, []);
+        });
+
+        // Function to load attribute values (reusable for both new and edit)
+        function loadAttributeValues(attributeId, selectedValues = []) {
+            let url = fetchValuesUrl + '/' + attributeId;
+            console.log("AJAX Request URL:", url);
+
+            let $select = $('#attribute_value_id').empty().prop('disabled', true);
+
+            if (!attributeId) {
+                $select.append('<option value="" disabled selected>-- Select Attribute First --</option>');
+                return;
             }
 
-            // AJAX Form Submission with Better Error Handling
-            $('#productForm').on('submit', function(e) {
-                e.preventDefault();
-                clearErrors();
-                showLoadingState();
+            $select.append('<option disabled selected>Loading values...</option>');
 
-                const formData = new FormData(this);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    console.log("Attribute Values Response:", res);
+                    $select.empty();
+                    if (res.values && res.values.length > 0) {
+                        res.values.forEach(v => {
+                            const isSelected = selectedValues.includes(v.id.toString()) ? 'selected' : '';
+                            $select.append(`<option value="${v.id}" ${isSelected}>${v.value}</option>`);
+                        });
+                        $select.prop('disabled', false);
+                        
+                        // Show success message if values were preselected
+                        if (selectedValues.length > 0) {
+                            console.log(`Pre-selected ${selectedValues.length} attribute values`);
+                            showAlert('success', `Loaded existing attribute selections`);
+                        }
+                    } else {
+                        $select.append('<option disabled>No values found</option>');
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Attribute Values Error:", xhr.status, xhr.statusText);
+                    console.error("Response Text:", xhr.responseText);
+                    $select.empty().append('<option disabled>Error loading values</option>');
+                }
+            });
+        }
 
-                // Add additional debugging
-                console.log('Form data being sent:');
-                for (let pair of formData.entries()) {
-                    console.log(pair[0], pair[1]);
+        // ============ FORM SUBMISSION ============
+        $('#productForm').on('submit', function(e) {
+            e.preventDefault();
+            console.log('=== FORM SUBMISSION STARTED ===');
+            
+            clearErrors();
+            showLoadingState();
+
+            const formData = new FormData(this);
+
+            // ✅ Debug: Check if attributes are being sent
+            console.log('Selected Attribute ID:', $('#attribute_id').val());
+            console.log('Selected Values:', $('#attribute_value_id').val());
+            
+            // Log all form data
+            console.log('Form data being sent:');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ':', pair[1]);
+            }
+
+            // ✅ Validate attributes if selected
+            const attributeId = $('#attribute_id').val();
+            const selectedValues = $('#attribute_value_id').val();
+            
+            if (attributeId && (!selectedValues || selectedValues.length === 0)) {
+                hideLoadingState();
+                showAlert('warning', 'Please select at least one attribute value.');
+                $('#attribute_value_id').focus();
+                return;
+            }
+
+            // ✅ Additional validations
+            if (!$('#category_id').val()) {
+                hideLoadingState();
+                showAlert('error', 'Please select a category.');
+                $('#category_id').focus();
+                return;
+            }
+
+            if (!$('#product_name').val().trim()) {
+                hideLoadingState();
+                showAlert('error', 'Please enter product name.');
+                $('#product_name').focus();
+                return;
+            }
+
+            if (!$('#product_price').val() || $('#product_price').val() <= 0) {
+                hideLoadingState();
+                showAlert('error', 'Please enter valid product price.');
+                $('#product_price').focus();
+                return;
+            }
+
+            if (!$('#stock').val() || $('#stock').val() < 0) {
+                hideLoadingState();
+                showAlert('error', 'Please enter valid stock quantity.');
+                $('#stock').focus();
+                return;
+            }
+
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                timeout: 120000, // 2 minutes timeout
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                beforeSend: function(xhr) {
+                    console.log('Sending AJAX request to:', $('#productForm').attr('action'));
+                },
+                success: function(response, textStatus, xhr) {
+                    console.log('=== SUCCESS RESPONSE ===');
+                    console.log('Response:', response);
+                    hideLoadingState();
+
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        if (response.redirect) {
+                            console.log('Redirecting to:', response.redirect);
+                            setTimeout(() => {
+                                window.location.href = response.redirect;
+                            }, 2000);
+                        }
+                        resetForm();
+                    } else {
+                        showAlert('error', response.message || 'Something went wrong!');
+                        if (response.errors) {
+                            displayErrors(response.errors);
+                        }
+                    }
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    console.error('=== AJAX ERROR ===');
+                    console.error('Status:', xhr.status);
+                    console.error('Status Text:', xhr.statusText);
+                    console.error('Response Text:', xhr.responseText);
+                    console.error('Text Status:', textStatus);
+                    console.error('Error Thrown:', errorThrown);
+
+                    hideLoadingState();
+
+                    let errorMessage = 'An error occurred. Please try again.';
+                    let errors = null;
+
+                    try {
+                        if (xhr.responseJSON) {
+                            const response = xhr.responseJSON;
+                            errorMessage = response.message || errorMessage;
+                            errors = response.errors || null;
+
+                            console.log('Parsed JSON Response:', response);
+
+                            // Show debug info if available
+                            if (response.error && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+                                console.error('Debug Error:', response.error);
+                            }
+                        } else if (xhr.responseText) {
+                            // Try to parse HTML error page
+                            console.log('HTML Error Response detected');
+                            if (xhr.responseText.includes('Fatal error') || xhr.responseText.includes('ParseError')) {
+                                errorMessage = 'PHP syntax error in controller. Check server logs.';
+                            } else if (xhr.responseText.includes('Class') && xhr.responseText.includes('not found')) {
+                                errorMessage = 'Missing class or model. Check imports in controller.';
+                            }
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing response:', parseError);
+                    }
+
+                    // Handle specific error types
+                    switch (xhr.status) {
+                        case 422:
+                            errorMessage = 'Please fix the validation errors below.';
+                            if (errors) {
+                                displayErrors(errors);
+                            }
+                            break;
+                        case 500:
+                            errorMessage = 'Server error occurred. Please check console and server logs.';
+                            break;
+                        case 404:
+                            errorMessage = 'Route not found. Please check your controller route.';
+                            break;
+                        case 403:
+                            errorMessage = 'Access denied. Check permissions.';
+                            break;
+                        case 419:
+                            errorMessage = 'Session expired. Please refresh page and try again.';
+                            break;
+                        case 413:
+                            errorMessage = 'Files too large. Please reduce file sizes.';
+                            break;
+                        case 0:
+                            if (textStatus === 'timeout') {
+                                errorMessage = 'Request timed out. Please try again.';
+                            } else {
+                                errorMessage = 'Network error. Check your connection.';
+                            }
+                            break;
+                    }
+
+                    showAlert('error', errorMessage);
+                },
+                complete: function(xhr, textStatus) {
+                    console.log('=== REQUEST COMPLETED ===');
+                    console.log('Final Status:', textStatus);
+                }
+            });
+        });
+
+        // ============ IMAGE UPLOAD HANDLING ============
+        $('#product_images').on('change', function(e) {
+            console.log('Image files selected');
+            const files = e.target.files;
+            const previewContainer = $('#imagePreviewContainer');
+            previewContainer.empty();
+
+            if (files.length > 5) {
+                showAlert('warning', 'Maximum 5 images allowed.');
+                this.value = '';
+                return;
+            }
+
+            let validFiles = 0;
+            Array.from(files).forEach((file, index) => {
+                console.log(`Processing file ${index + 1}:`, file.name, file.type, file.size);
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showAlert('error', `File "${file.name}" is not a valid image.`);
+                    return;
                 }
 
-                $.ajax({
-                    url: $(this).attr('action'),
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    timeout: 60000, // 60 seconds timeout
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    beforeSend: function(xhr) {
-                        console.log('Sending AJAX request to:', xhr.url || 'Unknown URL');
-                    },
-                    success: function(response, textStatus, xhr) {
-                        console.log('Success response:', response);
-                        hideLoadingState();
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showAlert('error', `File "${file.name}" is too large. Maximum size is 5MB.`);
+                    return;
+                }
 
-                        if (response.success) {
-                            showAlert('success', response.message);
-                            if (response.redirect) {
-                                setTimeout(() => {
-                                    window.location.href = response.redirect;
-                                }, 1500);
-                            }
-                            resetForm();
-                        } else {
-                            showAlert('error', response.message || 'Something went wrong!');
-                            if (response.errors) {
-                                displayErrors(response.errors);
-                            }
-                        }
-                    },
-                    error: function(xhr, textStatus, errorThrown) {
-                        console.error('AJAX Error Details:');
-                        console.error('Status:', xhr.status);
-                        console.error('Status Text:', xhr.statusText);
-                        console.error('Response Text:', xhr.responseText);
-                        console.error('Text Status:', textStatus);
-                        console.error('Error Thrown:', errorThrown);
-
-                        hideLoadingState();
-
-                        let errorMessage = 'An error occurred. Please try again.';
-                        let errors = null;
-
-                        try {
-                            if (xhr.responseJSON) {
-                                const response = xhr.responseJSON;
-                                errorMessage = response.message || errorMessage;
-                                errors = response.errors || null;
-
-                                // Show debug info if available
-                                if (response.error && window.location.hostname ===
-                                    'localhost') {
-                                    console.error('Debug Error:', response.error);
-                                }
-                            } else if (xhr.responseText) {
-                                // Try to parse HTML error page for useful info
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(xhr.responseText,
-                                    'text/html');
-                                const errorTitle = doc.querySelector('title');
-                                const errorBody = doc.querySelector(
-                                    '.exception-message, .whoops-container');
-
-                                if (errorTitle) {
-                                    console.error('Error Page Title:', errorTitle.textContent);
-                                }
-                                if (errorBody) {
-                                    console.error('Error Details:', errorBody.textContent
-                                        .substring(0, 500));
-                                }
-                            }
-                        } catch (parseError) {
-                            console.error('Error parsing response:', parseError);
-                        }
-
-                        // Handle specific error types
-                        switch (xhr.status) {
-                            case 422:
-                                errorMessage = 'Please fix the validation errors below.';
-                                if (errors) {
-                                    displayErrors(errors);
-                                }
-                                break;
-                            case 500:
-                                errorMessage =
-                                    'Server error occurred. Please check the console for details and try again.';
-                                break;
-                            case 404:
-                                errorMessage =
-                                    'The requested page was not found. Please check your route.';
-                                break;
-                            case 403:
-                                errorMessage =
-                                    'You do not have permission to perform this action.';
-                                break;
-                            case 419:
-                                errorMessage =
-                                    'Your session has expired. Please refresh the page and try again.';
-                                break;
-                            case 413:
-                                errorMessage =
-                                    'The uploaded files are too large. Please reduce file sizes.';
-                                break;
-                            case 0:
-                                if (textStatus === 'timeout') {
-                                    errorMessage = 'Request timed out. Please try again.';
-                                } else {
-                                    errorMessage =
-                                        'Network error. Please check your connection and try again.';
-                                }
-                                break;
-                        }
-
-                        showAlert('error', errorMessage);
-                    },
-                    complete: function(xhr, textStatus) {
-                        console.log('Request completed with status:', textStatus);
-                    }
-                });
+                validFiles++;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = $(`
+                        <div class="col-6">
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-fluid rounded border" style="max-height: 120px; object-fit: cover; width: 100%;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 remove-preview" 
+                                        data-index="${index}" style="width:25px;height:25px;font-size:10px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <small class="d-block text-muted mt-1 text-truncate">${file.name}</small>
+                            </div>
+                        </div>
+                    `);
+                    previewContainer.append(img);
+                };
+                reader.readAsDataURL(file);
             });
 
-            // Image Upload with Validation
-            $('#product_images').on('change', function(e) {
-                const files = e.target.files;
-                const previewContainer = $('#imagePreviewContainer');
-                previewContainer.empty();
+            if (validFiles === 0) {
+                this.value = '';
+            } else {
+                console.log(`${validFiles} valid images selected`);
+            }
+        });
 
-                if (files.length > 5) {
-                    showAlert('warning', 'Maximum 5 images allowed.');
+        // ============ VIDEO UPLOAD HANDLING ============
+        $('#product_video').on('change', function(e) {
+            console.log('Video file selected');
+            const file = e.target.files[0];
+            const container = $('#videoPreviewContainer');
+            const video = $('#videoPreview');
+
+            if (file) {
+                console.log('Video details:', file.name, file.type, file.size);
+
+                // Validate file size (50MB)
+                if (file.size > 50 * 1024 * 1024) {
+                    showAlert('error', 'Video must be under 50MB.');
                     this.value = '';
                     return;
                 }
 
-                let validFiles = 0;
-                Array.from(files).forEach((file, index) => {
-                    // Validate file type
-                    if (!file.type.startsWith('image/')) {
-                        showAlert('error', `File "${file.name}" is not a valid image.`);
-                        return;
-                    }
-
-                    // Validate file size (2MB)
-                    if (file.size > 2 * 1024 * 1024) {
-                        showAlert('error',
-                            `File "${file.name}" is too large. Maximum size is 2MB.`);
-                        return;
-                    }
-
-                    validFiles++;
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = $(`
-                    <div class="col-6">
-                        <div class="position-relative">
-                            <img src="${e.target.result}" class="img-fluid rounded border" style="max-height: 120px; object-fit: cover;">
-                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1 remove-preview" 
-                                    data-index="${index}" style="width:25px;height:25px;font-size:10px;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                            <small class="d-block text-muted mt-1">${file.name}</small>
-                        </div>
-                    </div>
-                `);
-                        previewContainer.append(img);
-                    };
-                    reader.readAsDataURL(file);
-                });
-
-                if (validFiles === 0) {
+                // Validate file type
+                const validTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/webm'];
+                if (!validTypes.includes(file.type)) {
+                    showAlert('error', 'Please upload a valid video file (MP4, MOV, AVI, WMV, WebM).');
                     this.value = '';
+                    return;
                 }
-            });
 
-            // Video Upload with Validation
-            $('#product_video').on('change', function(e) {
-                const file = e.target.files[0];
-                const container = $('#videoPreviewContainer');
-                const video = $('#videoPreview');
-
-                if (file) {
-                    // Validate file size (20MB)
-                    if (file.size > 20 * 1024 * 1024) {
-                        showAlert('error', 'Video must be under 20MB.');
-                        this.value = '';
-                        return;
-                    }
-
-                    // Validate file type
-                    const validTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv'];
-                    if (!validTypes.includes(file.type)) {
-                        showAlert('error', 'Please upload a valid video file (MP4, MOV, AVI, WMV).');
-                        this.value = '';
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        video.attr('src', e.target.result);
-                        container.show();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            // Remove video preview
-            $('#removeVideoPreview').on('click', function() {
-                $('#product_video').val('');
-                $('#videoPreviewContainer').hide();
-                $('#videoPreview').attr('src', '');
-            });
-
-            // Remove image preview
-            $(document).on('click', '.remove-preview', function() {
-                $(this).closest('.col-6').remove();
-            });
-
-            // Delete existing image with better error handling
-            $(document).on('click', '.delete-existing-image', function() {
-                const imageId = $(this).data('image-id');
-                const $imageContainer = $(`#existing-image-${imageId}`);
-
-                if (confirm('Are you sure you want to delete this image?')) {
-                    $.ajax({
-                        url: `${window.location.origin}/admin/delete-product-image/${imageId}`,
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        beforeSend: function() {
-                            $imageContainer.find('button').prop('disabled', true);
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                $imageContainer.fadeOut(300, function() {
-                                    $(this).remove();
-                                });
-                                showAlert('success', 'Image deleted successfully!');
-                            } else {
-                                showAlert('error', response.message ||
-                                    'Failed to delete image!');
-                                $imageContainer.find('button').prop('disabled', false);
-                            }
-                        },
-                        error: function(xhr) {
-                            console.error('Delete image error:', xhr);
-                            showAlert('error', 'Error deleting image!');
-                            $imageContainer.find('button').prop('disabled', false);
-                        }
-                    });
-                }
-            });
-
-            // Delete video
-            $(document).on('click', '.confirmDelete', function() {
-                const module = $(this).attr('module');
-                const moduleId = $(this).attr('moduleid');
-                if (confirm(`Are you sure you want to delete this ${module.replace('-', ' ')}?`)) {
-                    window.location.href =
-                        `${window.location.origin}/admin/delete-product-image-video/${module}/${moduleId}`;
-                }
-            });
-
-            // Utility Functions
-            function showLoadingState() {
-                $('#loadingOverlay').show();
-                $('#submitBtn').prop('disabled', true).find('.btn-text').text('Uploading...');
-            }
-
-            function hideLoadingState() {
-                $('#loadingOverlay').hide();
-                $('#submitBtn').prop('disabled', false).find('.btn-text').text(
-                    $('#submitBtn').closest('form').find('input[name="_method"]').length ? 'Update Product' :
-                    'Create Product'
-                );
-            }
-
-            function resetForm() {
-                $('#product_images, #product_video').val('');
-                $('#imagePreviewContainer').empty();
-                $('#videoPreviewContainer').hide();
-            }
-
-            function clearErrors() {
-                $('.is-invalid').removeClass('is-invalid');
-                $('.invalid-feedback').text('');
-            }
-
-            function displayErrors(errors) {
-                $.each(errors, function(field, messages) {
-                    const fieldName = field.replace(/\./g, '_').replace(/\[/g, '_').replace(/\]/g, '');
-                    const input = $(`[name="${field}"], [name="${field}[]"]`);
-                    const errorContainer = $(`.${fieldName}-error`);
-
-                    input.addClass('is-invalid');
-                    if (errorContainer.length) {
-                        errorContainer.text(messages[0]);
-                    } else {
-                        // Create error message if container doesn't exist
-                        input.after(`<div class="invalid-feedback">${messages[0]}</div>`);
-                    }
-                });
-
-                // Scroll to first error
-                const firstError = $('.is-invalid').first();
-                if (firstError.length) {
-                    $('html, body').animate({
-                        scrollTop: firstError.offset().top - 100
-                    }, 500);
-                }
-            }
-
-            function showAlert(type, message) {
-                // Remove existing alerts
-                $('.alert-floating').remove();
-
-                const alertClass = {
-                    success: 'alert-success',
-                    error: 'alert-danger',
-                    warning: 'alert-warning',
-                    info: 'alert-info'
-                } [type] || 'alert-info';
-
-                const alert = $(`
-            <div class="alert ${alertClass} alert-dismissible fade show alert-floating" role="alert">
-                <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `);
-
-                $('body').append(alert);
-
-                // Auto remove after 8 seconds
-                setTimeout(() => {
-                    alert.fadeOut(300, () => alert.remove());
-                }, 8000);
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    video.attr('src', e.target.result);
+                    container.show();
+                };
+                reader.readAsDataURL(file);
             }
         });
-    </script>
 
-    <style>
-        .existing-images img,
-        #imagePreviewContainer img {
-            max-height: 120px;
-            object-fit: cover;
+        // ============ REMOVE HANDLERS ============
+        // Remove video preview
+        $('#removeVideoPreview').on('click', function() {
+            console.log('Removing video preview');
+            $('#product_video').val('');
+            $('#videoPreviewContainer').hide();
+            $('#videoPreview').attr('src', '');
+        });
+
+        // Remove image preview
+        $(document).on('click', '.remove-preview', function() {
+            console.log('Removing image preview');
+            $(this).closest('.col-6').remove();
+        });
+
+        // ============ DELETE EXISTING MEDIA ============
+        // Delete existing image
+        $(document).on('click', '.delete-existing-image', function() {
+            const imageId = $(this).data('image-id');
+            const $imageContainer = $(`#existing-image-${imageId}`);
+
+            console.log('Deleting existing image:', imageId);
+
+            if (confirm('Are you sure you want to delete this image?')) {
+                $.ajax({
+                    url: `${window.location.origin}/admin/delete-product-image/${imageId}`,
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    beforeSend: function() {
+                        $imageContainer.find('button').prop('disabled', true);
+                        console.log('Delete image request sent');
+                    },
+                    success: function(response) {
+                        console.log('Delete image response:', response);
+                        if (response.success) {
+                            $imageContainer.fadeOut(300, function() {
+                                $(this).remove();
+                            });
+                            showAlert('success', 'Image deleted successfully!');
+                        } else {
+                            showAlert('error', response.message || 'Failed to delete image!');
+                            $imageContainer.find('button').prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Delete image error:', xhr);
+                        showAlert('error', 'Error deleting image!');
+                        $imageContainer.find('button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+
+        // Delete video
+        $(document).on('click', '.confirmDelete', function() {
+            const module = $(this).attr('module');
+            const moduleId = $(this).attr('moduleid');
+            console.log('Deleting:', module, moduleId);
+            
+            if (confirm(`Are you sure you want to delete this ${module.replace('-', ' ')}?`)) {
+                window.location.href = `${window.location.origin}/admin/delete-product-image-video/${module}/${moduleId}`;
+            }
+        });
+
+        // ============ UTILITY FUNCTIONS ============
+        function showLoadingState() {
+            console.log('Showing loading state');
+            $('#loadingOverlay').show();
+            $('#submitBtn').prop('disabled', true).find('.btn-text').text('Uploading...');
         }
 
-        .position-relative .btn {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        function hideLoadingState() {
+            console.log('Hiding loading state');
+            $('#loadingOverlay').hide();
+            const isEdit = $('#productForm').find('input[name="_method"]').length > 0 || 
+                          window.location.href.includes('/admin/add-edit-product/');
+            $('#submitBtn').prop('disabled', false).find('.btn-text').text(isEdit ? 'Update Product' : 'Create Product');
         }
 
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        function resetForm() {
+            console.log('Resetting form');
+            $('#product_images, #product_video').val('');
+            $('#imagePreviewContainer').empty();
+            $('#videoPreviewContainer').hide();
+            $('#attribute_id').val('').trigger('change');
+            $('#attribute_value_id').empty().prop('disabled', true).append('<option value="" disabled selected>-- Select Attribute First --</option>');
         }
-    </style>
+
+        function clearErrors() {
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').text('');
+        }
+
+        function displayErrors(errors) {
+            console.log('Displaying errors:', errors);
+            $.each(errors, function(field, messages) {
+                const fieldName = field.replace(/\./g, '_').replace(/\[/g, '_').replace(/\]/g, '');
+                const input = $(`[name="${field}"], [name="${field}[]"], #${field}`);
+                const errorContainer = $(`.${fieldName}-error`);
+
+                input.addClass('is-invalid');
+                if (errorContainer.length) {
+                    errorContainer.text(messages[0]);
+                } else {
+                    // Create error message if container doesn't exist
+                    input.after(`<div class="invalid-feedback">${messages[0]}</div>`);
+                }
+            });
+
+            // Scroll to first error
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
+        }
+
+        function showAlert(type, message) {
+            console.log(`Showing ${type} alert:`, message);
+            
+            // Remove existing alerts
+            $('.alert-floating').remove();
+
+            const alertClass = {
+                success: 'alert-success',
+                error: 'alert-danger',
+                warning: 'alert-warning',
+                info: 'alert-info'
+            }[type] || 'alert-info';
+
+            const alert = $(`
+                <div class="alert ${alertClass} alert-dismissible fade show alert-floating" role="alert">
+                    <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `);
+
+            $('body').append(alert);
+
+            // Auto remove after 10 seconds
+            setTimeout(() => {
+                alert.fadeOut(300, () => alert.remove());
+            }, 10000);
+        }
+
+        // ============ STOCK STATUS CHANGE ============
+        $('#stock_status').on('change', function() {
+            const status = $(this).val();
+            const stockField = $('#stock');
+            
+            if (status === '1') { // Out of stock
+                stockField.val('0').prop('readonly', true);
+                console.log('Stock status set to Out of Stock, stock set to 0');
+            } else { // In stock
+                stockField.prop('readonly', false);
+                console.log('Stock status set to Available');
+            }
+        });
+
+        // ============ PRICE CALCULATION ============
+        $('#product_price, #product_discount').on('input', function() {
+            const price = parseFloat($('#product_price').val()) || 0;
+            const discount = parseFloat($('#product_discount').val()) || 0;
+            
+            if (discount > 0 && discount <= 100) {
+                const discountedPrice = price - (price * discount / 100);
+                console.log(`Price: ${price}, Discount: ${discount}%, Final: ${discountedPrice.toFixed(2)}`);
+            }
+        });
+
+        console.log('=== Product Form JavaScript Loaded Successfully ===');
+    });
+</script>
+
+<style>
+    .existing-images img,
+    #imagePreviewContainer img {
+        max-height: 120px;
+        object-fit: cover;
+        transition: transform 0.2s;
+    }
+
+    .existing-images img:hover,
+    #imagePreviewContainer img:hover {
+        transform: scale(1.05);
+    }
+
+    .position-relative .btn {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+    }
+
+    .position-relative .btn:hover {
+        transform: scale(1.1);
+    }
+
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-overlay {
+        backdrop-filter: blur(5px);
+    }
+
+    .alert-floating {
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
 <?php $__env->stopPush(); ?>
-
 <?php echo $__env->make('admin.layout.layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\multi-vendor\resources\views/admin/products/add_edit_product.blade.php ENDPATH**/ ?>

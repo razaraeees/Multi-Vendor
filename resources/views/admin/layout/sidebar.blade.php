@@ -68,7 +68,7 @@
             class="submenu-item text-decoration-none {{ Request::is('admin/brands*') ? 'active' : '' }}">
             Brands
                 </a>
-                <a href="{{ url('admin/sections') }}" 
+                <a href="{{ url('admin/attributes') }}" 
                     class="submenu-item text-decoration-none {{ Request::is('admin/sections*') ? 'active' : '' }}">
                     Attributes
                 </a>

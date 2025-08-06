@@ -13,7 +13,7 @@ use App\Models\Brand;
 use App\Models\Section;
 use App\Models\Product;
 use App\Models\ProductsImage;
-use App\Models\ProductsFilter;
+use App\Models\Attribute;
 use App\Models\ProductsAttribute;
 use Illuminate\Support\Facades\Log;
 
@@ -43,6 +43,7 @@ class ProductsController extends Controller
             }
         ]);
 
+
         // If vendor, show only their products
         if ($adminType == 'vendor') {
             $products = $products->where('vendor_id', $vendor_id);
@@ -51,6 +52,20 @@ class ProductsController extends Controller
         $products = $products->get()->toArray();
 
         return view('admin.products.products', compact('products'));
+    }
+    public function getValues($id)
+    {
+        $attribute = Attribute::with('attributeValues')->find($id);
+
+        if (!$attribute) {
+            return response()->json(['error' => 'Attribute not found'], 404);
+        }
+
+        return response()->json([
+            'values' => $attribute->attributeValues->map(function ($v) {
+                return ['id' => $v->id, 'value' => $v->value];
+            })
+        ]);
     }
 
     public function updateProductStatus(Request $request)
@@ -113,6 +128,12 @@ class ProductsController extends Controller
                         'product_name'  => 'required|string|max:255',
                         'product_code'  => 'required|string|max:50',
                         'product_price' => 'required|numeric|min:0',
+                        'stock'         => 'required|numeric|min:0',
+                        'stock_status'  => 'required|in:0,1',
+                        // ✅ Attribute validation (optional)
+                        'attribute_id'         => 'nullable|exists:attributes,id',
+                        'attribute_value_id'   => 'nullable|array',
+                        'attribute_value_id.*' => 'nullable|exists:attributes_values,id',
                     ]);
 
                     $data = $request->all();
@@ -149,10 +170,38 @@ class ProductsController extends Controller
                     $product->meta_keywords    = $data['meta_keywords'] ?? '';
                     $product->is_featured      = $data['is_featured'] ?? 'No';
                     $product->is_bestseller    = $data['is_bestseller'] ?? 'No';
+
+                    // ✅ Stock fields
+                    $product->stock            = $data['stock'] ?? 0;
+                    $product->stock_status     = $data['stock_status'] ?? 0;
                     $product->status           = 1;
 
                     // ✅ Save to database
                     $product->save();
+
+                    // ✅ Handle Attributes Saving
+                    if (!empty($data['attribute_id']) && !empty($data['attribute_value_id'])) {
+                        Log::info('Saving attributes for product: ' . $product->id);
+                        Log::info('Attribute ID: ' . $data['attribute_id']);
+                        Log::info('Attribute Values: ' . json_encode($data['attribute_value_id']));
+
+                        // Delete existing attributes if editing
+                        if ($id) {
+                            ProductsAttribute::where('product_id', $product->id)->delete();
+                            Log::info('Deleted existing attributes for product: ' . $product->id);
+                        }
+
+                        // Save new attributes
+                        foreach ($data['attribute_value_id'] as $valueId) {
+                            $productAttribute = new ProductsAttribute();
+                            $productAttribute->product_id = $product->id;
+                            $productAttribute->attribute_id = $data['attribute_id'];
+                            $productAttribute->attribute_value_id = $valueId;
+                            $productAttribute->save();
+
+                            Log::info("Saved attribute - Product: {$product->id}, Attribute: {$data['attribute_id']}, Value: {$valueId}");
+                        }
+                    }
 
                     // Handle Image Upload
                     if ($request->hasFile('product_images')) {
@@ -253,13 +302,23 @@ class ProductsController extends Controller
             try {
                 $categories = $this->getCategoriesWithPath();
                 $brands = Brand::where('status', 1)->get()->toArray();
+                $attributes = Attribute::with('attributeValues')->where('status', 1)->get();
+
+                // ✅ Load existing product attributes if editing
+                if ($id && $product) {
+                    $product->selected_attributes = ProductsAttribute::where('product_id', $id)
+                        ->with(['attribute', 'attributeValue'])
+                        ->get();
+                    Log::info('Loaded existing attributes: ' . $product->selected_attributes->count());
+                }
             } catch (\Exception $e) {
                 Log::error('Data Load Error: ' . $e->getMessage());
                 $categories = [];
                 $brands = [];
+                $attributes = collect();
             }
 
-            return view('admin.products.add_edit_product', compact('title', 'product', 'categories', 'brands'));
+            return view('admin.products.add_edit_product', compact('title', 'product', 'categories', 'brands', 'attributes'));
         } catch (\Exception $e) {
             Log::error('Controller Error: ' . $e->getMessage());
 
@@ -273,8 +332,7 @@ class ProductsController extends Controller
 
             return redirect('admin/products')->with('error_message', 'Error loading product form.');
         }
-    }
-
+    }// End Method
     private function getCategoriesWithPath()
     {
         // Sirf leaf categories (jo categories ke andar koi sub-category nahi hai)

@@ -61,7 +61,7 @@
 <!-- Scripts -->
 {{-- @yield('scripts') --}}
 <!-- jquery:js -->
-
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{{ url('admin/vendors/js/vendor.bundle.base.js') }}"></script>
 <!-- endinject -->
 <!-- Plugin js for this page -->

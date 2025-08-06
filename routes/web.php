@@ -15,6 +15,8 @@ use App\Http\Controllers\Front\CmsController;
 use App\Http\Controllers\Front\AddressController;
 use App\Http\Controllers\Front\PaypalController;
 use App\Http\Controllers\Front\IyzipayController;
+use App\Http\Controllers\AttributeController;
+
 
 // ADMIN CONTROLLERS
 use App\Http\Controllers\Admin\AdminController;
@@ -30,10 +32,11 @@ use App\Http\Controllers\Admin\BannersController;
 use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CouponsController;
 use App\Http\Controllers\Admin\ShippingController;
+use App\Models\Product;
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
-Route::prefix('/admin')->group(function() {
+Route::prefix('/admin')->group(function () {
     Route::match(['get', 'post'], 'login', [AdminController::class, 'login']);
 
     Route::middleware(['admin'])->group(function () {
@@ -49,12 +52,14 @@ Route::prefix('/admin')->group(function() {
         Route::get('view-vendor-details/{id}', [AdminController::class, 'viewVendorDetails']);
         Route::post('update-admin-status', [AdminController::class, 'updateAdminStatus']);
 
-        // Sections
-        Route::resource('sections', SectionController::class)->only(['index'])->middleware('adminType:superadmin');
-        Route::post('update-section-status', [SectionController::class, 'updateSectionStatus'])->middleware('adminType:superadmin');
-        Route::get('delete-section/{id}', [SectionController::class, 'deleteSection'])->middleware('adminType:superadmin');
-        Route::match(['get', 'post'], 'add-edit-section/{id?}', [SectionController::class, 'addEditSection'])->middleware('adminType:superadmin');
+        // Attributes//
+        Route::get('/attributes', [AttributeController::class, 'index'])->name('admin.attributes.index');
+        Route::post('/attributes/store', [AttributeController::class, 'storeAttribute'])->name('admin.attributes.store');
+        Route::put('/attributes/update/{id}', [AttributeController::class, 'updateAttribute'])->name('admin.attributes.update');
+        Route::post('/attributes-value/store', [AttributeController::class, 'storeAttributeValue'])->name('admin.attribute-values.store');
+        Route::delete('/attributes/delete/{id}', [AttributeController::class, 'DeleteAttribute'])->name('admin.attributes.delete');
 
+        // Yeh route AJAX call ke liye
         // Categories
         Route::get('categories', [CategoryController::class, 'categories'])->middleware('adminType:superadmin');
         Route::post('update-category-status', [CategoryController::class, 'updateCategoryStatus'])->middleware('adminType:superadmin');
@@ -69,7 +74,7 @@ Route::prefix('/admin')->group(function() {
         Route::post('update-brand-status', [BrandController::class, 'updateBrandStatus'])->middleware('adminType:superadmin');
         Route::get('delete-brand/{id}', [BrandController::class, 'deleteBrand'])->middleware('adminType:superadmin');
         Route::match(['get', 'post'], 'add-edit-brand/{id?}', [BrandController::class, 'addEditBrand'])->middleware('adminType:superadmin');
-
+        
         // Products
         Route::get('products', [AdminProductsController::class, 'products']);
         Route::post('update-product-status', [AdminProductsController::class, 'updateProductStatus']);
@@ -77,9 +82,10 @@ Route::prefix('/admin')->group(function() {
         Route::match(['get', 'post'], 'add-edit-product/{id?}', [AdminProductsController::class, 'addEditProduct']);
         Route::get('delete-product-image/{id}', [AdminProductsController::class, 'deleteProductImage']);
         Route::get('delete-product-video/{id}', [AdminProductsController::class, 'deleteProductVideo']);
-
+        Route::get('/attribute-values/{id}', [AdminProductsController::class, 'getValues'])->name('api.attribute.values');
+        
         // Attributes
-        Route::match(['get', 'post'], 'add-edit-attributes/{id}', [AdminProductsController::class, 'addAttributes']);  
+        Route::match(['get', 'post'], 'add-edit-attributes/{id}', [AdminProductsController::class, 'addAttributes']);
         Route::post('update-attribute-status', [AdminProductsController::class, 'updateAttributeStatus']);
         Route::get('delete-attribute/{id}', [AdminProductsController::class, 'deleteAttribute']);
         Route::match(['get', 'post'], 'edit-attributes/{id}', [AdminProductsController::class, 'editAttributes']);
@@ -145,7 +151,8 @@ Route::prefix('/')->name('front.')->group(function () {
             foreach ($catUrls as $url) {
                 Route::match(['get', 'post'], '/' . $url, [FrontProductsController::class, 'listing']);
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
     }
 
     // Vendor
@@ -164,7 +171,7 @@ Route::prefix('/')->name('front.')->group(function () {
     Route::get('cart', [FrontProductsController::class, 'cart'])->name('cart');
     Route::post('cart/update', [FrontProductsController::class, 'cartUpdate']);
     // routes/web.php
-Route::post('/cart/delete', [FrontProductsController::class, 'cartDelete']);
+    Route::post('/cart/delete', [FrontProductsController::class, 'cartDelete']);
 
 
     // User Auth

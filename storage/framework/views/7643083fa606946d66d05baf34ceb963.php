@@ -68,7 +68,7 @@
             class="submenu-item text-decoration-none <?php echo e(Request::is('admin/brands*') ? 'active' : ''); ?>">
             Brands
                 </a>
-                <a href="<?php echo e(url('admin/sections')); ?>" 
+                <a href="<?php echo e(url('admin/attributes')); ?>" 
                     class="submenu-item text-decoration-none <?php echo e(Request::is('admin/sections*') ? 'active' : ''); ?>">
                     Attributes
                 </a>
