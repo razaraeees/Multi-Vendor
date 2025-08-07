@@ -4,10 +4,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <div class="logo">
-            <div class="logo-icon">
-                <i class="fas fa-code"></i>
-            </div>
-            DashCode
+            <img src="<?php echo e(asset('assets/images/logo/logo.jpg')); ?>" width="180px" alt="">
         </div>
     </div>
 
@@ -17,11 +14,6 @@
     </div>
 
     <div class="header-actions">
-        <div class="laravel-badge">
-            <div class="laravel-status"></div>
-            Laravel
-        </div>
-
         <a class="header-btn text-decoration-none" href="<?php echo e(url('/')); ?>">
             <i class="fas fa-globe"></i>
         </a>
