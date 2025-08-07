@@ -21,7 +21,7 @@ class ProductsController extends Controller
 {
     public function products()
     {
-        Session::put('page', 'products');
+        // Session::put('page', 'products');
         $adminType = Auth::guard('admin')->user()->type;
         $vendor_id = Auth::guard('admin')->user()->vendor_id;
 
@@ -33,26 +33,30 @@ class ProductsController extends Controller
             }
         }
 
-        // ✅ Fixed relationships
+        // Get products with categories & images
         $products = Product::with([
-            'category' => function ($query) {
-                $query->select('id', 'category_name');
-            },
-            'images' => function ($query) {
-                $query->select('id', 'product_id', 'image', 'status');
-            }
+            'category:id,category_name',
+            'images:id,product_id,image,status'
         ]);
 
-
-        // If vendor, show only their products
         if ($adminType == 'vendor') {
             $products = $products->where('vendor_id', $vendor_id);
         }
 
-        $products = $products->get()->toArray();
+        $products = $products->get();
+
+        // Add single image per product
+        foreach ($products as $product) {
+            $firstImage = $product->images->where('product_id', $product->id)->first();
+            $product->product_image = $firstImage ? $firstImage->image : null;
+        }
+
+        // Convert to array for view
+        $products = $products->toArray();
 
         return view('admin.products.products', compact('products'));
     }
+
     public function getValues($id)
     {
         $attribute = Attribute::with('attributeValues')->find($id);
@@ -332,7 +336,7 @@ class ProductsController extends Controller
 
             return redirect('admin/products')->with('error_message', 'Error loading product form.');
         }
-    }// End Method
+    } // End Method
     private function getCategoriesWithPath()
     {
         // Sirf leaf categories (jo categories ke andar koi sub-category nahi hai)

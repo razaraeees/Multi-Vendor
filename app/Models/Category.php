@@ -20,19 +20,12 @@ class Category extends Model
     }
     public static function categories()
     {
-        $getCategories = Category::with('subcategories')
-            ->where(['parent_id' => 0, 'status' => 1]) // sirf parent categories
-            ->get();
+        $getCategories = Category::with('subcategories.subcategories')
+        ->where(['parent_id' => 0, 'status' => 1])
+        ->get();
 
         return $getCategories;
     }
-
-    // public function section()
-    // {
-    //     return $this->belongsTo('App\Models\Section', 'section_id')->select('id', 'name'); // 'section_id' is the `categories` table foreign key to the `sections` table    // select('id', 'name') means select `id` and `name` coumns ONLY from the `sections` table for a better performance
-    // }
-
-
 
     // Multi-level categories (and subcategories (children)) relationships
     public function parentCategory()

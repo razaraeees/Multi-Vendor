@@ -5,7 +5,7 @@ $categorys = \App\Models\Category::categories();
 ?>
 
 <div class="header-wrapper">
-    <div class="top-menu">
+    {{-- <div class="top-menu">
         <div class="container">
             <nav class="navbar navbar-expand">
                 <div class="shiping-title d-none d-sm-flex">Welcome to our Shopingo store!</div>
@@ -61,8 +61,8 @@ $categorys = \App\Models\Category::categories();
                 </ul>
             </nav>
         </div>
-    </div>
-    <div class="header-content bg-warning">
+    </div> --}}
+    <div class="header-content">
         <div class="container">
             <div class="row align-items-center gx-4">
                 <div class="col-auto">
@@ -73,7 +73,7 @@ $categorys = \App\Models\Category::categories();
                         </div>
                         <div class="logo">
                             <a href="index.html">
-                                <img src="{{ asset('assets/images/logo-icon.png') }}" class="logo-icon"
+                                <img src="{{ asset('assets/images/logo/logo.jpg') }}" class="logo-icon"
                                     alt="" />
                             </a>
                         </div>
@@ -83,14 +83,14 @@ $categorys = \App\Models\Category::categories();
                     <div class="input-group flex-nowrap pb-3 pb-xl-0">
                         <form class="input-group flex-nowrap pb-3 pb-xl-0" action="{{ url('/search-products') }}"
                             method="get">
-                            <input type="text" class="form-control w-100 border-dark border border-3"
+                            <input style=" border: 1px solid red !important;" type="text" class="form-control w-100 border-color border border-3"
                                 placeholder="Search for Products" name="search"
                                 @if (isset($_REQUEST['search']) && !empty($_REQUEST['search'])) value="{{ $_REQUEST['search'] }}" @endif>
-                            <button class="btn btn-dark btn-ecomm border-3" type="submit">Search</button>
+                            <button class="btn btn-danger btn-ecomm border-3" type="submit" style="background-color: red">Search</button>
                         </form>
                     </div>
                 </div>
-                <div class="col-auto d-none d-xl-flex">
+                {{-- <div class="col-auto d-none d-xl-flex">
                     <div class="d-flex align-items-center gap-3">
 
                         <div class="">
@@ -98,7 +98,7 @@ $categorys = \App\Models\Category::categories();
                             <h5 class="mb-0">+011 5827918</h5>
                         </div>
                     </div>
-                </div>
+                </div> --}}
                 <div class="col-auto ms-auto">
                     <div class="top-cart-icons">
                         <nav class="navbar navbar-expand">
@@ -222,65 +222,68 @@ $categorys = \App\Models\Category::categories();
                         aria-label="Close"></button>
                 </div>
                 <div class="offcanvas-body primary-menu">
-                    <ul class="navbar-nav justify-content-start flex-grow-1 gap-1">
+                    <ul class="navbar-nav justify-content-center flex-grow-1 gap-1">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/') }}">Home</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="tv-shows.html"
-                                data-bs-toggle="dropdown">
-                                Categories
-                            </a>
-                            <div class="dropdown-menu dropdown-large-menu">
-                                <div class="row">
-                                    @foreach ($categorys as $cat)
-                                        <div class="col-12 col-xl-4">
-                                            <h6 class="large-menu-title fw-bold">
-                                                <a href="{{ url($cat->url) }}">{{ $cat->category_name }}</a>
-                                                @if ($cat->subcategories->count())
-                                                    <button class="toggle-submenu"
-                                                        data-target="sub-{{ $cat->id }}">
-                                                        <i class="bi bi-chevron-down"></i>
-                                                    </button>
-                                                @endif
-                                            </h6>
+                            <a class="nav-link dropdown-toggle" href="#"
+                                data-bs-toggle="dropdown">Categories</a>
 
-                                            @if ($cat->subcategories->count())
-                                                <ul class="list-unstyled submenu" id="sub-{{ $cat->id }}"
-                                                    style="display:none;">
-                                                    @foreach ($cat->subcategories as $subcategory)
-                                                        <li>
-                                                            <a
-                                                                href="{{ url($subcategory->url) }}">{{ $subcategory->category_name }}</a>
+                            <ul class="dropdown-menu">
+                                @foreach ($categories as $main)
+                                    <li class="dropdown-submenu">
+                                        {{-- Check if this category has any products --}}
+                                        @if ($main->products->count() > 0)
+                                            <a class="dropdown-item dropdown-toggle" href="{{ url($main->url) }}">
+                                                {{ $main->category_name }}
+                                            </a>
+                                        @else
+                                            <span class="dropdown-item disabled">{{ $main->category_name }}</span>
+                                        @endif
 
-                                                            {{-- Agar sub-subcategories hain --}}
-                                                            @if ($subcategory->subcategories->count())
-                                                                <button class="toggle-submenu"
-                                                                    data-target="sub-{{ $subcategory->id }}">
-                                                                    <i class="bi bi-chevron-down"></i>
-                                                                </button>
+                                        {{-- Subcategories --}}
+                                        @if ($main->subcategories->count())
+                                            <ul class="dropdown-menu">
+                                                @foreach ($main->subcategories as $sub)
+                                                    <li class="dropdown-submenu">
+                                                        @if ($sub->products->count() > 0)
+                                                            <a class="dropdown-item dropdown-toggle"
+                                                                href="{{ url($sub->url) }}">
+                                                                {{ $sub->category_name }}
+                                                            </a>
+                                                        @else
+                                                            <span
+                                                                class="dropdown-item disabled">{{ $sub->category_name }}</span>
+                                                        @endif
 
-                                                                <ul class="list-unstyled submenu"
-                                                                    id="sub-{{ $subcategory->id }}"
-                                                                    style="display:none; padding-left:15px;">
-                                                                    @foreach ($subcategory->subcategories as $child)
-                                                                        <li>
-                                                                            <a href="{{ url($child->url) }}">—
-                                                                                {{ $child->category_name }}</a>
-                                                                        </li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
+                                                        {{-- Sub-subcategories --}}
+                                                        @if ($sub->subcategories->count())
+                                                            <ul class="dropdown-menu">
+                                                                @foreach ($sub->subcategories as $child)
+                                                                    <li>
+                                                                        @if ($child->products->count() > 0)
+                                                                            <a class="dropdown-item"
+                                                                                href="{{ url($child->url) }}">
+                                                                                {{ $child->category_name }}
+                                                                            </a>
+                                                                        @else
+                                                                            <span
+                                                                                class="dropdown-item disabled">{{ $child->category_name }}</span>
+                                                                        @endif
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
                         </li>
+
                         <li class="nav-item dropdown">
                             <a class="nav-link" href="{{ url('/shop') }}"> Shop
                             </a>
@@ -300,36 +303,39 @@ $categorys = \App\Models\Category::categories();
     </div>
 </div>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".toggle-submenu").forEach(function (btn) {
-        btn.addEventListener("click", function (e) {
-            e.preventDefault();
-            let target = document.getElementById(this.dataset.target);
-            if (target.style.display === "none" || target.style.display === "") {
-                target.style.display = "block";
-                this.innerHTML = '<i class="bi bi-chevron-up"></i>';
-            } else {
-                target.style.display = "none";
-                this.innerHTML = '<i class="bi bi-chevron-down"></i>';
-            }
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".toggle-submenu").forEach(function(btn) {
+            btn.addEventListener("click", function(e) {
+                e.preventDefault();
+                let target = document.getElementById(this.dataset.target);
+                if (target.style.display === "none" || target.style.display === "") {
+                    target.style.display = "block";
+                    this.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                } else {
+                    target.style.display = "none";
+                    this.innerHTML = '<i class="bi bi-chevron-down"></i>';
+                }
+            });
         });
     });
-});
 </script>
 <style>
-/* Dropdown hover */
-.dropdown:hover > .dropdown-menu {
-    display: block;
-}
-.dropdown-menu {
-    min-width: 220px;
-}
-.dropdown-submenu {
-    position: relative;
-}
-.dropdown-submenu:hover .dropdown-menu {
-    display: block;
-    top: 0;
-    left: 100%;
-}
+    /* Dropdown hover */
+    .dropdown:hover>.dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-menu {
+        min-width: 220px;
+    }
+
+    .dropdown-submenu {
+        position: relative;
+    }
+
+    .dropdown-submenu:hover .dropdown-menu {
+        display: block;
+        top: 0;
+        left: 100%;
+    }
 </style>

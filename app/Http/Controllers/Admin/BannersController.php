@@ -83,11 +83,18 @@ class BannersController extends Controller
 
         // SECONDLY, IF THE REQUEST METHOS IS 'POST', THEN SUBMIT THE HTML <form> IN add_edit_banner.blade.php PAGE (WHETHER ADD OR UPDATE A BANNER):
         if ($request->isMethod('post')) { // WHETHER Add or Update <form> submission!!
+
+              $request->validate([
+                'title' => 'required|string|max:255',
+                'image' => $id ? 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048' : 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
+            
             $data = $request->all();
 
 
             $banner->type   = $data['type'];
             $banner->link   = $data['link'];
+            
             $banner->title  = $data['title'];
             $banner->alt    = $data['alt'];
             $banner->status = 1;

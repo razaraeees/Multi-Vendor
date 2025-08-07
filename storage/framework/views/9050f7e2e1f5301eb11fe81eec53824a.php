@@ -50,20 +50,20 @@
                                 <td>
                                     <?php if(!empty($product['product_image'])): ?>
                                         <img src="<?php echo e(asset('front/images/product_images/small/' . $product['product_image'])); ?>"
-                                             alt="Product Image"
-                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                                            alt="Product Image"
+                                            style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
                                     <?php else: ?>
                                         <img src="<?php echo e(asset('front/images/product_images/small/no-image.png')); ?>"
-                                             alt="No Image"
-                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                                            alt="No Image"
+                                            style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo e($product['category']['category_name'] ?? 'No Category'); ?></td>
                                 <td>
                                     <?php if($product['admin_type'] == 'vendor'): ?>
                                         <a target="_blank"
-                                           href="<?php echo e(url('admin/view-vendor-details/' . $product['admin_id'])); ?>"
-                                           class="text-primary font-weight-bold">
+                                            href="<?php echo e(url('admin/view-vendor-details/' . $product['admin_id'])); ?>"
+                                            class="text-primary font-weight-bold">
                                             <?php echo e(ucfirst($product['admin_type'])); ?>
 
                                         </a>
@@ -74,17 +74,13 @@
                                 </td>
                                 <td>
                                     <?php if($product['status'] == 1): ?>
-                                        <a class="updateProductStatus"
-                                           id="product-<?php echo e($product['id']); ?>"
-                                           product_id="<?php echo e($product['id']); ?>"
-                                           href="javascript:void(0)">
+                                        <a class="updateProductStatus" id="product-<?php echo e($product['id']); ?>"
+                                            product_id="<?php echo e($product['id']); ?>" href="javascript:void(0)">
                                             <i class="fas fa-check-circle text-success" status="Active"></i>
                                         </a>
                                     <?php else: ?>
-                                        <a class="updateProductStatus"
-                                           id="product-<?php echo e($product['id']); ?>"
-                                           product_id="<?php echo e($product['id']); ?>"
-                                           href="javascript:void(0)">
+                                        <a class="updateProductStatus" id="product-<?php echo e($product['id']); ?>"
+                                            product_id="<?php echo e($product['id']); ?>" href="javascript:void(0)">
                                             <i class="fas fa-times-circle text-secondary" status="Inactive"></i>
                                         </a>
                                     <?php endif; ?>
@@ -93,15 +89,13 @@
                                     <div class="action-buttons d-flex gap-2 justify-content-center">
                                         <!-- Edit Product -->
                                         <a href="<?php echo e(url('admin/add-edit-product/' . $product['id'])); ?>"
-                                           class="btn btn-sm btn-outline-info px-2 py-1"
-                                           title="Edit Product">
+                                            class="btn btn-sm btn-outline-info px-2 py-1" title="Edit Product">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>
 
                                         <!-- Add Attributes -->
                                         <a href="<?php echo e(url('admin/add-edit-attributes/' . $product['id'])); ?>"
-                                           class="btn btn-sm btn-outline-warning px-2 py-1"
-                                           title="Add Attributes">
+                                            class="btn btn-sm btn-outline-warning px-2 py-1" title="Add Attributes">
                                             <i class="fas fa-plus"></i>
                                         </a>
 
@@ -110,10 +104,8 @@
 
                                         <!-- Delete Product -->
                                         <a href="JavaScript:void(0)"
-                                           class="confirmDelete btn btn-sm btn-outline-danger px-2 py-1"
-                                           module="product"
-                                           moduleid="<?php echo e($product['id']); ?>"
-                                           title="Delete Product">
+                                            class="confirmDelete btn btn-sm btn-outline-danger px-2 py-1" module="product"
+                                            moduleid="<?php echo e($product['id']); ?>" title="Delete Product">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>
                                     </div>
@@ -128,18 +120,24 @@
 <?php $__env->stopSection(); ?>
 
 <script>
-    $(document).ready(function () {
-    $('#products').DataTable({
-        responsive: true,
-        scrollY: 400, // Set the height of the scrollable area
-        scrollCollapse: true,
-        paging: false, // Disable pagination if you want only scroll
-        fixedHeader: true, // Keep headers fixed while scrolling
-        columnDefs: [
-            { targets: [4], orderable: false }, // Make image column not sortable
-            { targets: [9], orderable: false }  // Make actions column not sortable
-        ]
+    $(document).ready(function() {
+        $('#products').DataTable({
+            responsive: true,
+            scrollY: 400, // Set the height of the scrollable area
+            scrollCollapse: true,
+            paging: false, // Disable pagination if you want only scroll
+            fixedHeader: true, // Keep headers fixed while scrolling
+            columnDefs: [{
+                    targets: [4],
+                    orderable: false
+                }, // Make image column not sortable
+                {
+                    targets: [9],
+                    orderable: false
+                } // Make actions column not sortable
+            ]
+        });
     });
-});
 </script>
+
 <?php echo $__env->make('admin.layout.layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\multi-vendor\resources\views/admin/products/products.blade.php ENDPATH**/ ?>

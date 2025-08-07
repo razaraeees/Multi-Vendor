@@ -7,10 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Category;
 
+/**
+ * @property string|null $product_image
+ */
+
 class Product extends Model
 {
     use HasFactory;
 
+    
 
 
     // Every 'product' belongs to a 'section'
@@ -147,11 +152,15 @@ class Product extends Model
         return $isProductNew;
     }
 
+    public function product_iamge(){
 
+        return $this->hasMany('');
+
+    }
 
 
     public static function getProductImage($product_id)
-    { // this method is used in front/orders/order_details.blade.php
+    { 
         $getProductImage = Product::select('product_image')->where('id', $product_id)->first()->toArray();
 
 

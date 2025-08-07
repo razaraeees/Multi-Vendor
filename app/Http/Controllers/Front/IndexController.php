@@ -11,22 +11,50 @@ use App\Models\Category;
 
 class IndexController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         // Get all active (enabled) banners
 
-        $sliderBanners = Banner::where('type', 'Slider')->where('status', 1)->get()->toArray(); 
-        $fixBanners    = Banner::where('type', 'Fix')->where('status', 1)->get()->toArray(); 
-        $newProducts   = Product::orderBy('id', 'Desc')->where('status', 1)->limit(8)->get()->toArray(); 
-        $bestSellers   = Product::where([
-            'is_bestseller' => 'Yes',
-            'status'        => 1 
-        ])->inRandomOrder()->get()->toArray();    
-        $discountedProducts = Product::where('product_discount', '>' , 0)->where('status', 1)->limit(6)->inRandomOrder()->get()->toArray(); // show 'Discounted Products' with RANDOM ORDERING    
-        $featuredProducts   = Product::where([
-            'is_featured' => 'Yes',
-            'status'      => 1 
-        ])->limit(6)->get()->toArray();
-        $categories = Category::where('status', '1')->get()->toArray();    
+        $sliderBanners = Banner::where('type', 'Slider')->where('status', 1)->get()->toArray();
+        $fixBanners    = Banner::where('type', 'Fix')->where('status', 1)->get()->toArray();
+        $newProducts = Product::with(['images' => function ($query) {
+            $query->where('status', 1)->orderBy('id', 'asc')->limit(1); 
+        }])
+            ->where('status', 1)
+            ->orderBy('id', 'desc')
+            ->limit(8)
+            ->get()
+            ->toArray();
+        $bestSellers = Product::with(['images' => function ($query) {
+            $query->where('status', 1)->orderBy('id')->limit(1);
+        }])
+            ->where([
+                'is_bestseller' => 'Yes',
+                'status' => 1
+            ])
+            ->inRandomOrder()
+            ->get()
+            ->toArray();
+        $discountedProducts = Product::with(['images' => function ($query) {
+            $query->where('status', 1)->orderBy('id')->limit(1);
+        }])
+            ->where('product_discount', '>', 0)
+            ->where('status', 1)
+            ->limit(6)
+            ->inRandomOrder()
+            ->get()
+            ->toArray();
+        $featuredProducts = Product::with(['images' => function ($query) {
+            $query->where('status', 1)->orderBy('id')->limit(1);
+        }])
+            ->where([
+                'is_featured' => 'Yes',
+                'status' => 1
+            ])
+            ->limit(6)
+            ->get()
+            ->toArray();
+        $categories = Category::where('status', '1')->where('parent_id', '0')->get();
 
         $meta_title       = 'Multi Vendor E-commerce Website';
         $meta_description = 'Online Shopping Website which deals in Clothing, Electronics & Appliances Products';

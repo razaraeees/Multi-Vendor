@@ -153,15 +153,6 @@ class ProductsController extends Controller
         ));
     }
 
-
-    // public function shop(){
-
-    //     $category = Category::where('status', 1)->first();
-    //     // Base query - YE IMPORTANT CHANGE HAI
-    //     $products = Product::with(['brand', 'ratings'])->where('status', 1);
-
-    //     return view('front.products.shop', compact('category', 'products'));
-    // }
     public function detail($id)
     {
         // 1. Get product details with eager loaded relationships
@@ -169,7 +160,7 @@ class ProductsController extends Controller
             'section',
             'category',
             'brand',
-            'attributes' => fn($q) => $q->where('stock', '>', 0)->where('status', 1),
+            'attributes',
             'images',
             'vendor'
         ])->findOrFail($id);
@@ -246,7 +237,7 @@ class ProductsController extends Controller
         });
 
         // 10. Stock
-        $totalStock = ProductsAttribute::where('product_id', $id)->sum('stock');
+        // $totalStock = ProductsAttribute::where('product_id', $id)->sum('stock');
 
         // 11. Meta tags
         $meta_title = $product->meta_title;
@@ -313,7 +304,7 @@ class ProductsController extends Controller
             $data = $request->all();
 
 
-            Session::forget('couponAmount'); // Deleting Data: https://laravel.com/docs/9.x/session#deleting-data
+            Session::forget('couponAmount'); 
             Session::forget('couponCode');   // Deleting Data: https://laravel.com/docs/9.x/session#deleting-data
 
 
