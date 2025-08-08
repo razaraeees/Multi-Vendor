@@ -11,11 +11,13 @@
                     <div class="ms-auto">
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0 p-0">
-                                <li class="breadcrumb-item"><a href="{{ url('/') }}"><i class="bx bx-home-alt"></i> Home</a>
+                                <li class="breadcrumb-item"><a href="{{ url('/') }}"><i class="bx bx-home-alt"></i>
+                                        Home</a>
                                 </li>
                                 <li class="breadcrumb-item"><a href="{{ url('/shop') }}">Shop</a>
                                 </li>
-                                <li class="breadcrumb-item active" aria-current="page">{{ $productDetails['product_name'] }}</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ $productDetails['product_name'] }}
+                                </li>
                             </ol>
                         </nav>
                     </div>
@@ -31,47 +33,57 @@
                         <div class="row g-0">
                             <div class="col-12 col-lg-5">
                                 <div class="image-zoom-section">
+                                    {{-- Main Carousel --}}
                                     <div class="product-gallery owl-carousel owl-theme border mb-3 p-3" data-slider-id="1">
                                         {{-- Main product image --}}
-                                        <div class="item">
-                                            <a href="{{ asset('front/images/product_images/large/' . $productDetails['product_image']) }}"
-                                                class="easyzoom"
-                                                data-standard="{{ asset('front/images/product_images/small/' . $productDetails['product_image']) }}">
-                                                <img src="{{ asset('front/images/product_images/large/' . $productDetails['product_image']) }}"
-                                                    class="img-fluid" alt="{{ $productDetails['product_name'] }}">
-                                            </a>
-                                        </div>
-
-                                        {{-- Alternative images --}}
-                                        @foreach ($productDetails['images'] as $image)
+                                        @if (!empty($productDetails['product_image']))
                                             <div class="item">
-                                                <a href="{{ asset('front/images/product_images/large/' . $image['image']) }}"
+                                                <a href="{{ asset('front/images/product_images/large/' . $productDetails['product_image']) }}"
                                                     class="easyzoom"
-                                                    data-standard="{{ asset('front/images/product_images/small/' . $image['image']) }}">
-                                                    <img src="{{ asset('front/images/product_images/large/' . $image['image']) }}"
+                                                    data-standard="{{ asset('front/images/product_images/small/' . $productDetails['product_image']) }}">
+                                                    <img src="{{ asset('front/images/product_images/large/' . $productDetails['product_image']) }}"
                                                         class="img-fluid" alt="{{ $productDetails['product_name'] }}">
                                                 </a>
                                             </div>
+                                        @endif
+
+                                        {{-- Alternative images --}}
+                                        @foreach ($productDetails['images'] as $image)
+                                            @if (!empty($image['image']))
+                                                <div class="item">
+                                                    <a href="{{ asset('front/images/product_images/large/' . $image['image']) }}"
+                                                        class="easyzoom"
+                                                        data-standard="{{ asset('front/images/product_images/small/' . $image['image']) }}">
+                                                        <img src="{{ asset('front/images/product_images/large/' . $image['image']) }}"
+                                                            class="img-fluid" alt="{{ $productDetails['product_name'] }}">
+                                                    </a>
+                                                </div>
+                                            @endif
                                         @endforeach
                                     </div>
 
+                                    {{-- Thumbnails --}}
                                     <div class="owl-thumbs d-flex justify-content-center mt-2" data-slider-id="1">
-
                                         {{-- Main thumbnail --}}
-                                        <button class="owl-thumb-item border-0 bg-transparent p-0">
-                                            <img src="{{ asset('front/images/product_images/small/' . $productDetails['product_image']) }}"
-                                                width="60" alt="{{ $productDetails['product_name'] }}">
-                                        </button>
+                                        @if (!empty($productDetails['product_image']))
+                                            <button class="owl-thumb-item border-0 bg-transparent p-0">
+                                                <img src="{{ asset('front/images/product_images/small/' . $productDetails['product_image']) }}"
+                                                    width="60" alt="{{ $productDetails['product_name'] }}">
+                                            </button>
+                                        @endif
 
                                         {{-- Alternative thumbnails --}}
                                         @foreach ($productDetails['images'] as $image)
-                                            <button class="owl-thumb-item border-0 bg-transparent p-0">
-                                                <img src="{{ asset('front/images/product_images/small/' . $image['image']) }}"
-                                                    width="60" alt="{{ $productDetails['product_name'] }}">
-                                            </button>
+                                            @if (!empty($image['image']))
+                                                <button class="owl-thumb-item border-0 bg-transparent p-0">
+                                                    <img src="{{ asset('front/images/product_images/small/' . $image['image']) }}"
+                                                        width="60" alt="{{ $productDetails['product_name'] }}">
+                                                </button>
+                                            @endif
                                         @endforeach
                                     </div>
                                 </div>
+
                             </div>
 
                             <div class="col-12 col-lg-7">
@@ -93,9 +105,9 @@
                                     <div class="d-flex align-items-center mt-3 gap-2">
                                         @if ($productDetails['product_discount'] > 0)
                                             <h5 class="mb-0 text-decoration-line-through text-light-3">
-                                                ${{ $productDetails['product_price'] }}</h5>
+                                                PKR{{ $productDetails['product_price'] }}</h5>
                                             <h4 class="mb-0">
-                                                ${{ $productDetails['product_price'] - ($productDetails['product_price'] * $productDetails['product_discount']) / 100 }}
+                                                PKR{{ $productDetails['product_price'] - ($productDetails['product_price'] * $productDetails['product_discount']) / 100 }}
                                             </h4>
                                         @else
                                             <h4 class="mb-0">${{ $productDetails['product_price'] }}</h4>
@@ -108,18 +120,26 @@
                                     </div>
 
                                     <dl class="row mt-3">
-                                        <dt class="col-sm-3">Product ID</dt>
-                                        <dd class="col-sm-9">{{ $productDetails['id'] }}</dd>
-                                        <dt class="col-sm-3">Delivery</dt>
-                                        <dd class="col-sm-9">{{ $productDetails['delivery_info'] ?? 'Worldwide' }}</dd>
+                                       <dl class="row mt-3">
+                                            <dt class="col-sm-3">Brand</dt>
+                                            <dd class="col-sm-9">{{ $productDetails['brand']['name'] ?? 'N/A' }}</dd>
+
+                                            <dt class="col-sm-3">Delivery</dt>
+                                            <dd class="col-sm-9">{{ $productDetails['delivery_info'] ?? 'Worldwide' }}</dd>
+
+                                            <dt class="col-sm-3">Stock Status</dt>
+                                            <dd class="col-sm-9">{{ $productDetails['stock_status'] }}</dd>
+                                        </dl>
                                     </dl>
 
 
                                     <form action="{{ url('cart/add') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="product_id" value="{{ $productDetails['id'] }}">
+
                                         <div class="row row-cols-auto align-items-center mt-3">
-                                            <!-- Quantity -->
+                                            <!-- Dynamic Attributes Loop -->
+
                                             <div class="col">
                                                 <label class="form-label">Quantity</label>
                                                 <select class="form-select form-select-sm" name="quantity" required>
@@ -130,31 +150,39 @@
                                                 </select>
                                             </div>
 
-                                            <!-- Size -->
-                                            <div class="col">
-                                                <label class="form-label">Size</label>
-                                                <select class="form-select form-select-sm" name="size" required>
-                                                    <option value="">Select Size</option>
-                                                    @foreach ($productDetails['attributes'] as $attribute)
-                                                        <option value="{{ $attribute['size'] }}">{{ $attribute['size'] }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                            @foreach ($groupedAttributes as $attrName => $attrData)
+                                                <div class="col">
+                                                    <label class="form-label">{{ $attrName }}</label>
+                                                    <select class="form-select form-select-sm"
+                                                        name="attributes[{{ $attrData['attribute_id'] }}]" required>
+                                                        <option value="">Select {{ $attrName }}</option>
+                                                        @foreach ($attrData['values'] as $value)
+                                                            <option value="{{ $value['attribute_value_id'] }}">
+                                                                {{ $value['value'] }}
+                                                                @if ($value['price'] > 0)
+                                                                    (+${{ $value['price'] }})
+                                                                @endif
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            @endforeach
 
                                             <!-- Colors (readonly thumbnails) -->
-                                            <div class="col">
-                                                <label class="form-label">Colors</label>
-                                                <div class="color-indigators d-flex align-items-center gap-2">
-                                                    @foreach ($groupProducts as $gp)
-                                                        <a href="{{ url('product/' . $gp['id']) }}">
-                                                            <div class="color-indigator-item"
-                                                                style="background-image: url('{{ asset('front/images/product_images/small/' . $gp['product_image']) }}'); background-size: cover;">
-                                                            </div>
-                                                        </a>
-                                                    @endforeach
+                                            @if  (!empty($groupProducts))
+                                                <div class="col">
+                                                    <label class="form-label">Colors</label>
+                                                    <div class="color-indigators d-flex align-items-center gap-2">
+                                                        @foreach ($groupProducts as $gp)
+                                                            <a href="{{ url('product/' . $gp['id']) }}">
+                                                                <div class="color-indigator-item"
+                                                                    style="background-image: url('{{ asset('front/images/product_images/small/' . $gp['product_image']) }}'); background-size: cover;">
+                                                                </div>
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            @endif
                                         </div>
 
                                         <!-- Buttons -->
@@ -167,6 +195,7 @@
                                             </a>
                                         </div>
                                     </form>
+
 
 
                                     <hr />

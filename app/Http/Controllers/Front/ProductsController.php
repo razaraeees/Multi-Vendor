@@ -21,7 +21,7 @@ use App\Models\Brand;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
-use App\Models\ProductsFilter;
+use App\Models\ProductsImage;
 use App\Models\Vendor;
 use App\Models\User;
 use App\Models\Country;
@@ -153,11 +153,68 @@ class ProductsController extends Controller
         ));
     }
 
+    public function quickView($id)
+    {
+        try {
+            // Get product with category relationship
+            $product = Product::with(['category', 'images', 'attributes'])
+                ->where('id', $id)
+                ->where('status', 1) // Only active products
+                ->first();
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found or unavailable'
+                ], 404);
+            }
+
+            // Get product images
+            $images = ProductsImage::where('product_id', $id)->get();
+
+            // Get product attributes (no status filter)
+            $attributes = ProductsAttribute::where('product_id', $id)
+                ->get();
+
+            // Calculate discounted price
+            $discountedPrice = Product::getDiscountPrice($id);
+
+            // Prepare response data
+            $productData = [
+                'id' => $product->id,
+                'product_name' => $product->product_name,
+                'product_code' => $product->product_code,
+                'product_price' => $product->product_price,
+                'product_discount' => $product->product_discount,
+                'discounted_price' => $discountedPrice,
+                'description' => $product->description,
+                'is_featured' => $product->is_featured,
+                'status' => $product->status,
+                'category_name' => $product->category ? $product->category->category_name : null,
+                'reviews_count' => 0, // You can implement this based on your reviews system
+                'stock_quantity' => $product->stock_quantity ?? 0
+            ];
+
+            return response()->json([
+                'success' => true,
+                'product' => $productData,
+                'images' => $images->toArray(),
+                'attributes' => $attributes->toArray(),
+                'message' => 'Product details loaded successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('QuickView Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while loading product details'
+            ], 500);
+        }
+    }
+
     public function detail($id)
     {
-        // 1. Get product details with eager loaded relationships
         $product = Product::with([
-            'section',
             'category',
             'brand',
             'attributes',
@@ -236,22 +293,63 @@ class ProductsController extends Controller
             ])->count()];
         });
 
-        // 10. Stock
-        // $totalStock = ProductsAttribute::where('product_id', $id)->sum('stock');
+        $productAttributes = ProductsAttribute::with(['attribute', 'attributeValue', 'product'])
+            ->where('product_id', $id)
+            ->get();
+        // dd($productAttributes->toArray());
+        // Group attributes by attribute name for easier display
+        $groupedAttributes = [];
+        foreach ($productAttributes as $productAttr) {
+            if ($productAttr->attribute && $productAttr->attributeValue) {
+                $attributeName = $productAttr->attribute->name; // DB column name
+                $attributeValue = $productAttr->attributeValue->value; // DB column name
+                $attributeType = $productAttr->attribute->attribute_type; // DB column name
 
-        // 11. Meta tags
+                if (!isset($groupedAttributes[$attributeName])) {
+                    $groupedAttributes[$attributeName] = [
+                        'attribute_type' => $attributeType,
+                        'attribute_id' => $productAttr->attribute->id,
+                        'values' => []
+                    ];
+                }
+
+                $groupedAttributes[$attributeName]['values'][] = [
+                    'value' => $attributeValue,
+                    'product_attr_id' => $productAttr->id,
+                    'attribute_value_id' => $productAttr->attributeValue->id,
+                    'price' => $productAttr->price ?? 0,
+                    'stock' => $productAttr->stock ?? 0
+                ];
+            }
+        }
+
+
+        // 11. Stock - Calculate total stock
+        $totalStock = $product->stock ?? 0;
+
+        // If stock is managed through attributes, calculate from there
+        if ($productAttributes->count() > 0) {
+            $totalStock = $productAttributes->sum('stock') ?: $totalStock;
+        }
+
+        // Get stock status from product table
+        $stockStatus = $product->stock_status ?? 'out_of_stock';
+
+        // 12. Meta tags
         $meta_title = $product->meta_title;
         $meta_description = $product->meta_description;
         $meta_keywords = $product->meta_keywords;
 
-        // 12. Return to view
+        // 13. Return to view
         return view('front.products.detail', compact(
             'productDetails',
             'categoryDetails',
             'totalStock',
+            'stockStatus',
             'similarProducts',
             'recentlyViewedProducts',
             'groupProducts',
+            'groupedAttributes', // Make sure this is passed
             'meta_title',
             'meta_description',
             'meta_keywords',
@@ -260,7 +358,6 @@ class ProductsController extends Controller
             'avgStarRating'
         ))->with($starCounts->toArray());
     }
-
 
 
 
@@ -303,22 +400,22 @@ class ProductsController extends Controller
         if ($request->isMethod('post')) {
             $data = $request->all();
 
+            Session::forget('couponAmount');
+            Session::forget('couponCode');
 
-            Session::forget('couponAmount'); 
-            Session::forget('couponCode');   // Deleting Data: https://laravel.com/docs/9.x/session#deleting-data
-
-
-            // Prevent the ability to add an item to the Cart with 0 zero quantity
-            if ($data['quantity'] <= 0) { // if the ordered quantity is 0, convert it to at least 1
+            if ($data['quantity'] <= 0) {
                 $data['quantity'] = 1;
             }
 
-
-            // Check if the selected product `product_id` with that selected `size` have available `stock` in `products_attributes` table
-            $getProductStock = ProductsAttribute::getProductStock($data['product_id'], $data['size']);
-
-            if ($getProductStock < $data['quantity']) { // if the `stock` available (in `products_attributes` table) is less than the ordered quantity by user (the quantity that the user desires)
-                return redirect()->back()->with('error_message', 'Required Quantity is not available!');
+            // Make sure attributes are passed from form
+            $selectedAttributes = [];
+            if (!empty($data['attributes'])) {
+                foreach ($data['attributes'] as $attribute_id => $value_id) {
+                    $selectedAttributes[] = [
+                        'attribute_id' => $attribute_id,
+                        'attribute_value_id' => $value_id
+                    ];
+                }
             }
 
             $session_id = Session::get('session_id');
@@ -327,54 +424,44 @@ class ProductsController extends Controller
                 Session::put('session_id', $session_id);
             }
 
-            // Get $user_id and $countProducts in two cases. Check if the same product `product_id` with the same `size` already exists (was ordered by the same user depending on `user_id` or `session_id`) in Cart `carts` table in TWO cases: firstly, the user is authenticated/logged in, and secondly, the user is NOT logged in i.e. guest
-            // To prevent repetition of the ordered Cart products `product_id` with the same sizes `size` for a certain user (`session_id` or `user_id` depending on whether the user is authenticated/logged in or not) in the `carts` table
-            if (Auth::check()) { // Here we're using the default 'web' Authentication Guard    // if the user is authenticated/logged in (using the default Laravel Authentication Guard 'web' Guard (check config/auth.php file) whose 'Provider' is the User.php Model i.e. `users` table)    // Determining If The Current User Is Authenticated: https://laravel.com/docs/9.x/authentication#determining-if-the-current-user-is-authenticated
-                $user_id = Auth::user()->id; // Retrieving The Authenticated User: https://laravel.com/docs/9.x/authentication#retrieving-the-authenticated-user
-
-                // Check if that authenticated/logged in user has already THE SAME product `product_id` with THE SAME `size` (in `carts` table) in the Cart i.e. the `carts` table
+            if (Auth::check()) {
+                $user_id = Auth::user()->id;
                 $countProducts = Cart::where([
-                    'user_id'    => $user_id, // THAT EXACT authenticated/logged in user (using their `user_id` because they're authenticated/logged in)
+                    'user_id' => $user_id,
                     'product_id' => $data['product_id'],
-                    'size'       => $data['size']
+                    'selected_attributes' => json_encode($selectedAttributes)
                 ])->count();
-            } else { // if the user is NOT logged in (guest)
-                // Check if that guest or NOT logged in user has already THE SAME products `product_id` with THE SAME `size` (in `carts` table) in the Cart i.e. the `carts` table    // When user logins, their `user_id` gets updated (check userLogin() method in UserController.php)
-                $user_id = 0; // is the same as    $user_id = null;    // When user logins, their `user_id` gets updated (check userLogin() method in UserController.php)    // this is because that the use is NOT authenticated / NOT logged in i.e. guest 
-                $countProducts = Cart::where([ // We get the count (number) of that specific product `product_id` with that specific `size` to prevent repetition in the `carts` table 
-                    'session_id' => $session_id, // THAT EXACT NON-authenticated/NOT logged or Guest user (using their `session_id` because they're NOT authenticated/NOT logged in or Guest)
+            } else {
+                $user_id = 0;
+                $countProducts = Cart::where([
+                    'session_id' => $session_id,
                     'product_id' => $data['product_id'],
-                    'size'       => $data['size']
+                    'selected_attributes' => json_encode($selectedAttributes)
                 ])->count();
             }
 
-
-
-            // To prevent repetition of the ordered products `product_id` with the same sizes `size` for a certain user (`session_id` or `user_id` depending on whether the user is authenticated/logged in or not) in the `carts` table:
-            if ($countProducts > 0) { // if that specific user (`session_id` or `user_id` i.e. depending on the user is authenticated/logged or not (guest)) ALREADY ordered that specific product `product_id` with that same exact `size`, we're going to just UPDATE the `quantity` in the `carts` table to prevent repetition of the ordered products inside the table (and won't create a new record)    // In other words, if the same product with the same size ALREADY EXISTS (ordered with the SAME user) in the `carts` table
+            if ($countProducts > 0) {
                 Cart::where([
-                    'session_id' => $session_id, // THAT EXACT NON-authenticated/NOT logged or Guest user (using their `session_id` because they're NOT authenticated/NOT logged in or Guest)
-                    'user_id'    => $user_id ?? 0, // if the user is authenticated/logged in, take its $user_id. If not, make it zero 0    // When user logins, their `user_id` gets updated (check userLogin() method in UserController.php)
+                    'session_id' => $session_id,
+                    'user_id' => $user_id ?? 0,
                     'product_id' => $data['product_id'],
-                    'size'       => $data['size']
-                ])->increment('quantity', $data['quantity']); // Add the new added quantity (    $data['quantity']    ) to the already existing `quantity` in the `carts` table    // Update Statements: Increment & Decrement: https://laravel.com/docs/9.x/queries#increment-and-decrement
-            } else { // if that `product_id` with that `size` was never ordered by that user `session_id` or `user_id` (i.e. that product with that size for that user doesn't exist in the `carts` table), INSERT it into the `carts` table for the first time
-                // INSERT the ordered product `product_id`, the user's session ID `session_id`, `size` and `quantity` in the `carts` table
-                $item = new Cart; // the `carts` table
-
-                $item->session_id = $session_id; // $session_id will be stored whether the user is authenticated/logged in or NOT
-                $item->user_id    = $user_id; // depending on the last if statement (whether user is authenticated/logged in or NOT (guest))    // $user_id will be always zero 0 if the user is NOT authenticated/logged in    // When user logins, their `user_id` gets updated (check userLogin() method in UserController.php)
+                    'selected_attributes' => json_encode($selectedAttributes)
+                ])->increment('quantity', $data['quantity']);
+            } else {
+                $item = new Cart;
+                $item->session_id = $session_id;
+                $item->user_id = $user_id;
                 $item->product_id = $data['product_id'];
-                $item->size       = $data['size'];
-                $item->quantity   = $data['quantity'];
-
+                $item->selected_attributes = json_encode($selectedAttributes);
+                $item->quantity = $data['quantity'];
                 $item->save();
             }
-
 
             return redirect()->back()->with('success_message', 'Product has been added in Cart! <a href="/cart" style="text-decoration: underline !important">View Cart</a>');
         }
     }
+
+
 
     // Render Cart page (front/products/cart.blade.php)    
     public function cart(Request $request)
@@ -383,18 +470,30 @@ class ProductsController extends Controller
         $getCartItems = Cart::getCartItems();
 
         foreach ($getCartItems as &$item) {
-            $priceData = \App\Models\Product::getDiscountAttributePrice($item['product_id'], $item['size']);
+            // Attributes decode karo
+            $attributes = json_decode($item['attributes'], true) ?? [];
+
+            // Stock check ke liye attribute_value_id ka use karo
+            // Pehle price nikalte the size se, ab hum multiple attributes se price nikalenge
+            // For now price calculation same rakh rahe hain (update if needed)
+            $priceData = \App\Models\Product::getDiscountAttributePrice(
+                $item['product_id'],
+                $attributes // Pass whole attributes array to your function
+            );
+
             $item['unit_price'] = $priceData['final_price'];
             $item['original_price'] = $priceData['product_price'];
             $item['discount'] = $priceData['discount'];
             $item['total_price'] = $priceData['final_price'] * $item['quantity'];
+            $item['attributes_list'] = $attributes; // frontend display ke liye
         }
 
-        // Total calculation - sirf items ka total
+        // Total calculation
         $total_price = collect($getCartItems)->sum('total_price');
 
         return view('front.products.cart', compact('getCartItems', 'total_price'));
     }
+
 
     public function cartUpdate(Request $request)
     {
@@ -405,40 +504,40 @@ class ProductsController extends Controller
 
         foreach ($data['items'] as $item) {
             $cartDetails = Cart::find($item['id']);
-
             if (!$cartDetails) continue;
 
-            // Stock check
-            $availableStock = ProductsAttribute::select('stock')->where([
-                'product_id' => $cartDetails['product_id'],
-                'size'       => $cartDetails['size']
-            ])->first();
+            $attributes = json_decode($cartDetails['attributes'], true) ?? [];
 
-            if ($availableStock && $item['quantity'] > $availableStock->stock) {
+            // ✅ Stock check: attribute_value_id ke basis pe
+            $query = ProductsAttribute::where('product_id', $cartDetails['product_id']);
+            foreach ($attributes as $attr) {
+                $query->where('attribute_id', $attr['attribute_id'])
+                    ->where('attribute_value_id', $attr['attribute_value_id']);
+            }
+            $availableStock = $query->value('stock');
+
+            if ($availableStock && $item['quantity'] > $availableStock) {
                 return redirect()->back()->with('error', 'Product stock is not available for some items');
             }
 
-            // Size availability check
-            $availableSize = ProductsAttribute::where([
-                'product_id' => $cartDetails['product_id'],
-                'size'       => $cartDetails['size'],
-                'status'     => 1
-            ])->count();
-
-            if ($availableSize == 0) {
-                return redirect()->back()->with('error', 'Some product sizes are not available. Please update your cart.');
+            // ✅ Attribute availability check
+            $queryStatus = ProductsAttribute::where('product_id', $cartDetails['product_id']);
+            foreach ($attributes as $attr) {
+                $queryStatus->where('attribute_id', $attr['attribute_id'])
+                    ->where('attribute_value_id', $attr['attribute_value_id'])
+                    ->where('status', 1);
+            }
+            if ($queryStatus->count() == 0) {
+                return redirect()->back()->with('error', 'Some product attributes are not available. Please update your cart.');
             }
 
-            // ✅ Direct assign (no fillable issue)
+            // Update quantity
             $cartDetails->quantity = $item['quantity'];
             $cartDetails->save();
         }
 
         return redirect()->back()->with('success', 'Cart updated successfully!');
     }
-
-
-
 
     // Delete a Cart Item AJAX call in front/products/cart_items.blade.php. Check front/js/custom.js    
     public function cartDelete(Request $request)

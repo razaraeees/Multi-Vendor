@@ -74,7 +74,7 @@ Route::prefix('/admin')->group(function () {
         Route::post('update-brand-status', [BrandController::class, 'updateBrandStatus'])->middleware('adminType:superadmin');
         Route::get('delete-brand/{id}', [BrandController::class, 'deleteBrand'])->middleware('adminType:superadmin');
         Route::match(['get', 'post'], 'add-edit-brand/{id?}', [BrandController::class, 'addEditBrand'])->middleware('adminType:superadmin');
-        
+
         // Products
         Route::get('products', [AdminProductsController::class, 'products']);
         Route::post('update-product-status', [AdminProductsController::class, 'updateProductStatus']);
@@ -83,7 +83,8 @@ Route::prefix('/admin')->group(function () {
         Route::get('delete-product-image/{id}', [AdminProductsController::class, 'deleteProductImage']);
         Route::get('delete-product-video/{id}', [AdminProductsController::class, 'deleteProductVideo']);
         Route::get('/attribute-values/{id}', [AdminProductsController::class, 'getValues'])->name('api.attribute.values');
-        
+
+
         // Attributes
         Route::match(['get', 'post'], 'add-edit-attributes/{id}', [AdminProductsController::class, 'addAttributes']);
         Route::post('update-attribute-status', [AdminProductsController::class, 'updateAttributeStatus']);
@@ -186,6 +187,7 @@ Route::prefix('/')->name('front.')->group(function () {
     Route::get('search-products', [FrontProductsController::class, 'listing']);
     Route::post('check-pincode', [FrontProductsController::class, 'checkPincode']);
     Route::match(['get', 'post'], 'contact', [CmsController::class, 'contact']);
+    Route::get('/product/quickview/{id}', [FrontProductsController::class, 'quickView']);
     Route::get('about', [CmsController::class, 'about']);
 
     Route::post('add-subscriber-email', [FrontNewsletterController::class, 'addSubscriber']);

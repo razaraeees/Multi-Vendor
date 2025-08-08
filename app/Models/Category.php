@@ -12,17 +12,17 @@ class Category extends Model
     protected $table = 'categories';
     protected $fillable = ['section_id', 'parent_id', 'category_name', 'description', 'url', 'meta_title', 'meta_description', 'meta_keywords', 'status'];
 
-        public function subcategories()
+    public function subcategories()
     {
         return $this->hasMany(Category::class, 'parent_id')
-                    ->where('status', 1)
-                    ->with('subcategories'); // recursive call for nested categories
+            ->where('status', 1)
+            ->with('subcategories'); // recursive call for nested categories
     }
     public static function categories()
     {
         $getCategories = Category::with('subcategories.subcategories')
-        ->where(['parent_id' => 0, 'status' => 1])
-        ->get();
+            ->where(['parent_id' => 0, 'status' => 1])
+            ->get();
 
         return $getCategories;
     }
@@ -42,49 +42,86 @@ class Category extends Model
 
     public static function categoryDetails($url)
     {
-        $categoryDetails = Category::select('id', 'parent_id', 'category_name', 'url', 'description', 'meta_title', 'meta_description', 'meta_keywords')->with([ // Constraining Eager Loads: https://laravel.com/docs/9.x/eloquent-relationships#constraining-eager-loads    // Subquery Where Clauses: https://laravel.com/docs/9.x/queries#subquery-where-clauses    // Advanced Subqueries: https://laravel.com/docs/9.x/eloquent#advanced-subqueries
-            'subCategories' => function ($query) { // the 'subCategories' relationship method in Category.php model (this model)
-                $query->select('id', 'parent_id', 'category_name', 'url', 'description', 'meta_title', 'meta_description', 'meta_keywords'); // Important Note: It's a MUST to select 'id' even if you don't need it, because the relationship Foreign Key `product_id` depends on it, or else the `product` relationship would give you 'null'!
-            }
-        ])->where('url', $url)->first()->toArray(); // using the relationship subCategories() method with with() method    // Get the parent category and its subcategories
+        // Get category with level field
+        $categoryDetails = Category::select('id', 'parent_id', 'category_name', 'url', 'description', 'level', 'meta_title', 'meta_description', 'meta_keywords')
+            ->with([
+                'subCategories' => function ($query) {
+                    $query->select('id', 'parent_id', 'category_name', 'url', 'description', 'level', 'meta_title', 'meta_description', 'meta_keywords');
+                }
+            ])
+            ->where('url', $url)
+            ->first();
 
-        $catIds = array(); // this array will contain both the parent category ids and its subcategories (child categories) ids too
-        $catIds[] = $categoryDetails['id']; // add/append the PARENT category id to the $catIds array
-
-
-
-        // Category Breadcrumb in listing.blade.php: There're two Breadrumbs: category Breadcrumb and subcategory Breadcrumb    
-        if ($categoryDetails['parent_id'] == 0) { // if the category is PARENT category (not SUBcategory)
-            // Show main category only in the Breadcrumb
-            $breadcrumbs = '
-                <li class="is-marked"><a href="' . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
-            ';
-        } else { // if the category is SUBcategory category (not PARENT category)
-            // Show BOTH main (parent) category AND subcategory in the Breadcrumb
-            $parentCategory = Category::select('category_name', 'url')->where('id', $categoryDetails['parent_id'])->first()->toArray();
-            $breadcrumbs = '
-                <li class="has-separator"><a href="' . url($parentCategory['url'])  . '">' . $parentCategory['category_name']  . '</a></li>
-                <li class="is-marked"><a href="'     . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
-            ';
+        // Check if category exists
+        if (!$categoryDetails) {
+            abort(404, 'Category not found');
         }
 
+        $categoryDetails = $categoryDetails->toArray();
+        $catIds = array();
+        $catIds[] = $categoryDetails['id'];
 
+        // Build breadcrumbs based on level
+        $breadcrumbs = '';
 
-        // dd($categoryDetails);
-        foreach ($categoryDetails['sub_categories'] as $key => $subcat) { // Get the SUBCATEGORIES ids of the PARENT category
-            $catIds[] = $subcat['id']; // add the $subcategories ids of the parent category to the $catIds array
+        if ($categoryDetails['level'] == 1) {
+            // Main category (level 1)
+            $breadcrumbs = '
+            <li class="is-marked"><a href="' . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
+        ';
+        } elseif ($categoryDetails['level'] == 2) {
+            // Sub category (level 2) - show parent + current
+            $parentCategory = Category::select('category_name', 'url', 'level')
+                ->where('id', $categoryDetails['parent_id'])
+                ->first();
+
+            if ($parentCategory) {
+                $breadcrumbs = '
+                <li class="has-separator"><a href="' . url($parentCategory->url) . '">' . $parentCategory->category_name . '</a></li>
+                <li class="is-marked"><a href="' . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
+            ';
+            }
+        } elseif ($categoryDetails['level'] == 3) {
+            // Sub-sub category (level 3) - show grandparent + parent + current
+            $parentCategory = Category::select('id', 'parent_id', 'category_name', 'url', 'level')
+                ->where('id', $categoryDetails['parent_id'])
+                ->first();
+
+            if ($parentCategory) {
+                $grandParentCategory = Category::select('category_name', 'url')
+                    ->where('id', $parentCategory->parent_id)
+                    ->first();
+
+                if ($grandParentCategory) {
+                    $breadcrumbs = '
+                    <li class="has-separator"><a href="' . url($grandParentCategory->url) . '">' . $grandParentCategory->category_name . '</a></li>
+                    <li class="has-separator"><a href="' . url($parentCategory->url) . '">' . $parentCategory->category_name . '</a></li>
+                    <li class="is-marked"><a href="' . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
+                ';
+                } else {
+                    $breadcrumbs = '
+                    <li class="has-separator"><a href="' . url($parentCategory->url) . '">' . $parentCategory->category_name . '</a></li>
+                    <li class="is-marked"><a href="' . url($categoryDetails['url']) . '">' . $categoryDetails['category_name'] . '</a></li>
+                ';
+                }
+            }
+        }
+
+        // Get all subcategory IDs
+        if (isset($categoryDetails['sub_categories']) && is_array($categoryDetails['sub_categories'])) {
+            foreach ($categoryDetails['sub_categories'] as $subcat) {
+                $catIds[] = $subcat['id'];
+            }
         }
 
         $resp = array(
-            'catIds'          => $catIds, // the parent category id and its subcategories (child categories), if any, of a certain URL
-            'categoryDetails' => $categoryDetails, // the category details of a certain URL
+            'catIds'          => $catIds,
+            'categoryDetails' => $categoryDetails,
             'breadcrumbs'     => $breadcrumbs
         );
 
-
         return $resp;
     }
-
 
 
     // this method is called in admin\filters\filters.blade.php to be able to translate the filter cat_ids column to category names to show them in the table in filters.blade.php in the Admin Panel    
