@@ -39,8 +39,10 @@ class Product extends Model
     // Every product has many attributes
     public function attributes()
     {
-        return $this->hasMany('App\Models\ProductsAttribute');
+        return $this->hasMany('App\Models\ProductsAttribute', 'product_id')
+            ->with('attribute'); // Optional: parent attribute (e.g., "Color")
     }
+
 
     // Every product has many images
     public function images()

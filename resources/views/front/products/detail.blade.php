@@ -1,5 +1,18 @@
 @extends('front.layout.layout')
 
+@php
+    $inWishlist = false;
+    if (auth()->check()) {
+        $inWishlist = \App\Models\Wishlist::where('user_id', auth()->id())
+            ->where('product_id', $productDetails['id'])
+            ->exists();
+    } else {
+        $sessionId = session('session_id');
+        $inWishlist = \App\Models\Wishlist::where('session_id', $sessionId)
+            ->where('product_id', $productDetails['id'])
+            ->exists();
+    }
+@endphp
 
 @section('content')
     <div class="page-content">
@@ -120,12 +133,9 @@
                                     </div>
 
                                     <dl class="row mt-3">
-                                       <dl class="row mt-3">
+                                        <dl class="row mt-3">
                                             <dt class="col-sm-3">Brand</dt>
                                             <dd class="col-sm-9">{{ $productDetails['brand']['name'] ?? 'N/A' }}</dd>
-
-                                            <dt class="col-sm-3">Delivery</dt>
-                                            <dd class="col-sm-9">{{ $productDetails['delivery_info'] ?? 'Worldwide' }}</dd>
 
                                             <dt class="col-sm-3">Stock Status</dt>
                                             <dd class="col-sm-9">{{ $productDetails['stock_status'] }}</dd>
@@ -169,7 +179,7 @@
                                             @endforeach
 
                                             <!-- Colors (readonly thumbnails) -->
-                                            @if  (!empty($groupProducts))
+                                            @if (!empty($groupProducts))
                                                 <div class="col">
                                                     <label class="form-label">Colors</label>
                                                     <div class="color-indigators d-flex align-items-center gap-2">
@@ -190,11 +200,17 @@
                                             <button type="submit" class="btn btn-dark btn-ecomm">
                                                 <i class="bx bxs-cart-add"></i> Add to Cart
                                             </button>
-                                            <a href="javascript:;" class="btn btn-light btn-ecomm">
-                                                <i class="bx bx-heart"></i> Add to Wishlist
-                                            </a>
+                                            <button type="button" data-id="{{ $productDetails['id'] }}"
+                                                class="btn btn-ecomm {{ $inWishlist ? 'btn-danger in-wishlist' : 'btn-light add-to-wishlist' }}">
+                                                @if ($inWishlist)
+                                                    <i class="bx bxs-heart"></i>
+                                                @else
+                                                    <i class="bx bx-heart"></i> Add to Wishlist
+                                                @endif
+                                            </button>
                                         </div>
                                     </form>
+
 
 
 
@@ -725,4 +741,66 @@
         </section>
         <!--end similar products-->
     </div>
+    <div id="wishlistToast"
+        style="position: fixed; top: 1rem; right: 1rem; z-index: 1055; background: #fff8d5; border-left: 5px solid #ffcc00; padding: 10px 15px; border-radius: 5px; display: none;">
+        <span id="wishlistToastText">Message here...</span>
+    </div>
+
+@endsection
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '.btn-ecomm', function(e) {
+            if (!$(this).data('id')) return; // ignore if no product id
+            e.preventDefault();
+
+            let button = $(this);
+            let productId = button.data('id');
+            let isRemoving = button.hasClass('in-wishlist');
+
+            $.ajax({
+                url: isRemoving ? '/wishlist/remove' : '/wishlist/add',
+                type: 'POST',
+                data: {
+                    product_id: productId,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (isRemoving) {
+                            button.removeClass('btn-danger in-wishlist')
+                                .addClass('btn-light')
+                                .html('<i class="bx bx-heart"></i>');
+                        } else {
+                            button.removeClass('btn-light')
+                                .addClass('btn-danger in-wishlist')
+                                .html('<i class="bx bxs-heart"></i>');
+                        }
+                        showToast(response.message);
+                    } else {
+                        showToast(response.message || 'Something went wrong.');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        showToast('Please login to manage your wishlist.');
+                        setTimeout(function() {
+                            window.location.href = '/login';
+                        }, 1500);
+                    } else {
+                        showToast('Unable to update wishlist. Please try again.');
+                    }
+                }
+            });
+        });
+
+        function showToast(message) {
+            $('#wishlistToastText').text(message);
+            $('#wishlistToast').fadeIn(300);
+            setTimeout(function() {
+                $('#wishlistToast').fadeOut(500);
+            }, 3000);
+        }
+    });
+</script>
 @endsection

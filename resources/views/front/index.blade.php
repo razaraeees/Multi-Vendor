@@ -83,6 +83,7 @@ $categorys = \App\Models\Category::categories();
             </div>
         </section>
         <!--start Featured product-->
+        {{-- CONSISTENT Featured Products Section --}}
         <section class="py-4">
             <div class="container">
                 <div class="separator pb-4">
@@ -96,10 +97,34 @@ $categorys = \App\Models\Category::categories();
                             @php
                                 $getDiscountPrice = \App\Models\Product::getDiscountPrice($product['id']);
                                 $product_url = url('product/' . $product['id']);
-                                $image = $product['images'][0]['image'] ?? null;
 
-                                //  dd($product['images'][0]['image']);
+                                // Image logic
+                                $productImage = null;
+                                if (
+                                    isset($product['images']) &&
+                                    is_array($product['images']) &&
+                                    !empty($product['images'])
+                                ) {
+                                    foreach ($product['images'] as $img) {
+                                        if (!empty($img['image'])) {
+                                            $productImage = $img['image'];
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (
+                                    !$productImage &&
+                                    isset($product['product_image']) &&
+                                    !empty($product['product_image'])
+                                ) {
+                                    $productImage = $product['product_image'];
+                                }
+
+                                $finalImageUrl = $productImage
+                                    ? asset('front/images/product_images/small/' . $productImage)
+                                    : asset('assets/images/no-product-image.png');
                             @endphp
+
                             <div class="col">
                                 <div class="card">
                                     <div class="position-relative overflow-hidden">
@@ -113,24 +138,22 @@ $categorys = \App\Models\Category::categories();
                                                 Quick View
                                             </a>
                                         </div>
-                                        @if ($image)
-                                            <a href="{{ $product_url }}">
-                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
-                                                    alt="{{ $product['product_name'] }}" class="img-fluid">
-                                            </a>
-                                        @else
-                                            <a href="{{ $product_url }}">
-                                                <img src="{{ asset('assets/images/no-product-image.png') }}" alt="No Image"
-                                                    class="img-fluid">
-                                            </a>
-                                        @endif
+
+                                        <a href="{{ $product_url }}">
+                                            <img src="{{ $finalImageUrl }}" alt="{{ $product['product_name'] }}"
+                                                class="img-fluid product-image"
+                                                style="height: 250px; width: 100%; object-fit: cover;" loading="lazy"
+                                                onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product-image.png') }}'; this.style.opacity='0.5';">
+                                        </a>
                                     </div>
+
                                     <div class="card-body px-0">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
-                                                <p class="mb-1 product-short-name">{{ $product['product_code'] }}</p>
-                                                <h6 class="mb-0 fw-bold product-short-title">
-                                                    {{ $product['product_name'] }}</h6>
+                                                <p class="mb-1 product-short-name">{{ $product['product_code'] ?? 'N/A' }}
+                                                </p>
+                                                <h6 class="mb-0 fw-bold product-short-title">{{ $product['product_name'] }}
+                                                </h6>
                                             </div>
                                             <div class="icon-wishlist">
                                                 <a href="javascript:;"><i class="bx bx-heart"></i></a>
@@ -150,25 +173,23 @@ $categorys = \App\Models\Category::categories();
                                                     class="h6 fw-light fw-bold text-secondary text-decoration-line-through">
                                                     Rs. {{ $product['product_price'] }}
                                                 </div>
-                                                <div class="h6 fw-bold">
-                                                    Rs. {{ $getDiscountPrice }}
-                                                </div>
+                                                <div class="h6 fw-bold">Rs. {{ $getDiscountPrice }}</div>
                                             @else
-                                                <div class="h6 fw-bold">
-                                                    Rs. {{ $product['product_price'] }}
-                                                </div>
+                                                <div class="h6 fw-bold">Rs. {{ $product['product_price'] }}</div>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
-                    </div><!--end row-->
+                    </div>
                 </div>
             </div>
         </section>
-        <!--end Featured product-->
-        <!--start New Arrivals-->
+
+        {{-- Apply same logic to other sections --}}
+
+        {{-- New Arrivals Section --}}
         <section class="py-4">
             <div class="container">
                 <div class="separator pb-4">
@@ -192,27 +213,39 @@ $categorys = \App\Models\Category::categories();
                                                 Quick View
                                             </a>
                                         </div>
+
                                         @php
-                                            $image = $product['images'][0]['image'] ?? null;
+                                            $productImage = null;
+                                            if (isset($product['images']) && !empty($product['images'])) {
+                                                foreach ($product['images'] as $img) {
+                                                    if (!empty($img['image'])) {
+                                                        $productImage = $img['image'];
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if (!$productImage && !empty($product['product_image'])) {
+                                                $productImage = $product['product_image'];
+                                            }
+
                                             $product_url = url('product/' . $product['id']);
+                                            $imageUrl = $productImage
+                                                ? asset('front/images/product_images/small/' . $productImage)
+                                                : asset('assets/images/no-product-image.png');
                                         @endphp
-                                        @if ($image)
-                                            <a href="{{ $product_url }}">
-                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
-                                                    alt="{{ $product['product_name'] }}" class="img-fluid">
-                                            </a>
-                                        @else
-                                            <a href="{{ $product_url }}">
-                                                <img src="{{ asset('assets/images/no-product-image.png') }}"
-                                                    alt="No Image" class="img-fluid">
-                                            </a>
-                                        @endif
+
+                                        <a href="{{ $product_url }}">
+                                            <img src="{{ $imageUrl }}" alt="{{ $product['product_name'] }}"
+                                                class="img-fluid" style="height: 250px; width: 100%; object-fit: cover;"
+                                                onerror="this.src='{{ asset('assets/images/no-product-image.png') }}';">
+                                        </a>
                                     </div>
                                     <div class="card-body px-0">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
                                                 <p class="mb-1 product-short-name">
-                                                    {{ $product['category']['category_name'] ?? 'Product' }}</p>
+                                                    {{ $product['category']['category_name'] ?? 'Product' }}
+                                                </p>
                                                 <h6 class="mb-0 fw-bold product-short-title">
                                                     {{ $product['product_name'] }}</h6>
                                             </div>
@@ -250,6 +283,7 @@ $categorys = \App\Models\Category::categories();
                 </div>
             </div>
         </section>
+
         <!--end New Arrivals-->
         <!--start Advertise banners-->
         <section class="py-4">
@@ -316,18 +350,23 @@ $categorys = \App\Models\Category::categories();
         <section class="py-5 border-top">
             <div class="container">
                 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
+                    {{-- Best Selling Products - Dynamic --}}
                     <div class="col">
                         <div class="bestseller-list mb-3">
                             <h6 class="mb-3 text-uppercase fw-bold">Best Selling Products</h6>
-
                             @foreach (array_slice($bestSellers, 0, 4) as $item)
                                 <hr>
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="bottom-product-img">
                                         <a href="{{ url('product/' . $item['id']) }}">
                                             @php
-                                                $image =
-                                                    $item['images'][0]['image'] ?? ($item['product_image'] ?? null);
+                                                $image = null;
+                                                if (isset($item['images']) && !empty($item['images'])) {
+                                                    $image = $item['images'][0]['image'] ?? null;
+                                                }
+                                                if (!$image && !empty($item['product_image'])) {
+                                                    $image = $item['product_image'];
+                                                }
                                             @endphp
                                             @if ($image)
                                                 <img src="{{ asset('front/images/product_images/small/' . $image) }}"
@@ -339,96 +378,6 @@ $categorys = \App\Models\Category::categories();
                                         </a>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
-                                        <div class="rating">
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                        </div>
-                                        <p class="mb-0 pro-price">
-                                            <strong>
-                                                @if ($item['product_discount'] > 0)
-                                                    Rs.
-                                                    {{ $item['product_price'] - ($item['product_price'] * $item['product_discount']) / 100 }}
-                                                @else
-                                                    Rs. {{ $item['product_price'] }}
-                                                @endif
-                                            </strong>
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="featured-list mb-3">
-                            <h6 class="mb-3 text-uppercase fw-bold">Featured Products</h6>
-                            @foreach (array_slice($featuredProducts, 0, 4) as $item)
-                                <hr>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="bottom-product-img">
-                                        <a href="{{ url('product/' . $item['id']) }}">
-                                            @php
-                                                $image =
-                                                    $item['images'][0]['image'] ?? ($item['product_image'] ?? null);
-                                            @endphp
-                                            @if ($image)
-                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
-                                                    width="80" alt="{{ $item['product_name'] }}">
-                                            @else
-                                                <img src="{{ asset('assets/images/no-product-image.png') }}"
-                                                    width="80" alt="No Image">
-                                            @endif
-                                        </a>
-                                    </div>
-                                    <div class="ms-0">
-                                        <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
-                                        <div class="rating">
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                        </div>
-                                        <p class="mb-0 pro-price">
-                                            <strong>
-                                                @if ($item['product_discount'] > 0)
-                                                    Rs.
-                                                    {{ $item['product_price'] - ($item['product_price'] * $item['product_discount']) / 100 }}
-                                                @else
-                                                    Rs. {{ $item['product_price'] }}
-                                                @endif
-                                            </strong>
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="new-arrivals-list mb-3">
-                            <h6 class="mb-3 text-uppercase fw-bold">New Arrivals</h6>
-                            @foreach (array_slice($newProducts, 0, 4) as $item)
-                                <hr>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="bottom-product-img">
-                                        <a href="{{ url('product/' . $item['id']) }}">
-                                            @php
-                                                $image =
-                                                    $item['images'][0]['image'] ?? ($item['product_image'] ?? null);
-                                            @endphp
-                                            @if ($image)
-                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
-                                                    width="80" alt="{{ $item['product_name'] }}">
-                                            @else
-                                                <img src="{{ asset('assets/images/no-product-image.png') }}"
-                                                    width="80" alt="No Image">
-                                            @endif
-                                        </a>
-                                    </div>
-                                    <div class="ms-0">
                                         <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
                                         <div class="rating">
                                             @for ($i = 0; $i < 5; $i++)
@@ -451,18 +400,23 @@ $categorys = \App\Models\Category::categories();
                         </div>
                     </div>
 
+                    {{-- Featured Products List - Dynamic --}}
                     <div class="col">
-                        <div class="top-rated-products-list mb-3">
-                            <h6 class="mb-3 text-uppercase fw-bold">Top Rated Products</h6>
-
-                            @foreach (array_slice($discountedProducts, 0, 4) as $item)
+                        <div class="featured-list mb-3">
+                            <h6 class="mb-3 text-uppercase fw-bold">Featured Products</h6>
+                            @foreach (array_slice($featuredProducts, 0, 4) as $item)
                                 <hr>
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="bottom-product-img">
                                         <a href="{{ url('product/' . $item['id']) }}">
                                             @php
-                                                $image =
-                                                    $item['images'][0]['image'] ?? ($item['product_image'] ?? null);
+                                                $image = null;
+                                                if (isset($item['images']) && !empty($item['images'])) {
+                                                    $image = $item['images'][0]['image'] ?? null;
+                                                }
+                                                if (!$image && !empty($item['product_image'])) {
+                                                    $image = $item['product_image'];
+                                                }
                                             @endphp
                                             @if ($image)
                                                 <img src="{{ asset('front/images/product_images/small/' . $image) }}"
@@ -473,7 +427,107 @@ $categorys = \App\Models\Category::categories();
                                             @endif
                                         </a>
                                     </div>
-                                    <div class="ms-0">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
+                                        <div class="rating">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <i class="bx bxs-star text-warning"></i>
+                                            @endfor
+                                        </div>
+                                        <p class="mb-0 pro-price">
+                                            <strong>
+                                                @if ($item['product_discount'] > 0)
+                                                    Rs.
+                                                    {{ $item['product_price'] - ($item['product_price'] * $item['product_discount']) / 100 }}
+                                                @else
+                                                    Rs. {{ $item['product_price'] }}
+                                                @endif
+                                            </strong>
+                                        </p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- New Arrivals List - Dynamic --}}
+                    <div class="col">
+                        <div class="new-arrivals-list mb-3">
+                            <h6 class="mb-3 text-uppercase fw-bold">New Arrivals</h6>
+                            @foreach (array_slice($newProducts, 0, 4) as $item)
+                                <hr>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bottom-product-img">
+                                        <a href="{{ url('product/' . $item['id']) }}">
+                                            @php
+                                                $image = null;
+                                                if (isset($item['images']) && !empty($item['images'])) {
+                                                    $image = $item['images'][0]['image'] ?? null;
+                                                }
+                                                if (!$image && !empty($item['product_image'])) {
+                                                    $image = $item['product_image'];
+                                                }
+                                            @endphp
+                                            @if ($image)
+                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
+                                                    width="80" alt="{{ $item['product_name'] }}">
+                                            @else
+                                                <img src="{{ asset('assets/images/no-product-image.png') }}"
+                                                    width="80" alt="No Image">
+                                            @endif
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
+                                        <div class="rating">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <i class="bx bxs-star text-warning"></i>
+                                            @endfor
+                                        </div>
+                                        <p class="mb-0 pro-price">
+                                            <strong>
+                                                @if ($item['product_discount'] > 0)
+                                                    Rs.
+                                                    {{ $item['product_price'] - ($item['product_price'] * $item['product_discount']) / 100 }}
+                                                @else
+                                                    Rs. {{ $item['product_price'] }}
+                                                @endif
+                                            </strong>
+                                        </p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Top Rated Products - Dynamic --}}
+                    <div class="col">
+                        <div class="top-rated-products-list mb-3">
+                            <h6 class="mb-3 text-uppercase fw-bold">Top Rated Products</h6>
+                            @foreach (array_slice($discountedProducts, 0, 4) as $item)
+                                <hr>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bottom-product-img">
+                                        <a href="{{ url('product/' . $item['id']) }}">
+                                            @php
+                                                $image = null;
+                                                if (isset($item['images']) && !empty($item['images'])) {
+                                                    $image = $item['images'][0]['image'] ?? null;
+                                                }
+                                                if (!$image && !empty($item['product_image'])) {
+                                                    $image = $item['product_image'];
+                                                }
+                                            @endphp
+                                            @if ($image)
+                                                <img src="{{ asset('front/images/product_images/small/' . $image) }}"
+                                                    width="80" alt="{{ $item['product_name'] }}">
+                                            @else
+                                                <img src="{{ asset('assets/images/no-product-image.png') }}"
+                                                    width="80" alt="No Image">
+                                            @endif
+                                        </a>
+                                    </div>
+                                    <div>
                                         <h6 class="mb-0 fw-bold mb-1">{{ $item['product_name'] }}</h6>
                                         <div class="rating">
                                             @for ($i = 0; $i < 5; $i++)
@@ -496,7 +550,6 @@ $categorys = \App\Models\Category::categories();
                         </div>
                     </div>
                 </div>
-                <!--end row-->
             </div>
         </section>
         <!--end bottom products section-->
@@ -610,32 +663,36 @@ $categorys = \App\Models\Category::categories();
         <!--end brands-->
     </div>
 
-    <div class="modal fade" id="QuickViewProduct" tabindex="-1" role="dialog" 
-     aria-labelledby="QuickViewProductLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
-        <div class="modal-content rounded-0 border-0">
-            <div class="modal-body">
-                <!-- Initial loading content -->
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="sr-only">Loading...</span>
+    <div class="modal fade" id="QuickViewProduct" tabindex="-1" role="dialog" aria-labelledby="QuickViewProductLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content rounded-0 border-0">
+                <div class="modal-body">
+                    <!-- Initial loading content -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading product details...</p>
                     </div>
-                    <p class="mt-3">Loading product details...</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div id="wishlistToast"
+        style="position: fixed; top: 1rem; right: 1rem; z-index: 1055; background: #fff8d5; border-left: 5px solid #ffcc00; padding: 10px 15px; border-radius: 5px; display: none;">
+        <span id="wishlistToastText">Message here...</span>
+    </div>
 
     <!-- Site-Priorities /- -->
 @endsection
 
 @section('scripts')
     <script>
-        // Fixed QuickView AJAX for Bootstrap 4.6
         $(document).ready(function() {
 
-            // CORRECT: Bootstrap 4.6 ke liye data-toggle aur data-target use karo
+            // QuickView Modal Handler - Bootstrap 4.6 compatible
             $('[data-toggle="modal"][data-target="#QuickViewProduct"]').click(function(e) {
                 e.preventDefault();
 
@@ -649,13 +706,13 @@ $categorys = \App\Models\Category::categories();
 
                 // Show loading state
                 modal.find('.modal-body').html(`
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-                <p class="mt-3">Loading product details...</p>
-            </div>
-        `);
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading product details...</p>
+                    </div>
+                `);
 
                 // Show modal immediately with loading state
                 modal.modal('show');
@@ -669,159 +726,164 @@ $categorys = \App\Models\Category::categories();
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
-                        if (response.success) {
-                            var product = response.product;
-                            var images = response.images || [];
-                            var attributes = response.attributes || [];
 
-                            // Build image gallery HTML
+
+                        if (response.success) {
+                            var product = response.productDetails;
+                            var images = product.images || [];
+                            var attributes = response.groupedAttributes || {}; // grouped format
+                            var category = response.categoryDetails || {};
+
+                            // gallery HTML build
+
+                            console.log("Original Price:", product.product_price);
+                            console.log("Discounted Price:", product.discounted_price);
+
                             var galleryHtml = '';
                             var thumbsHtml = '';
 
                             if (images.length > 0) {
                                 images.forEach(function(image, index) {
                                     galleryHtml += `
-                                <div class="item">
-                                    <img src="/front/images/product_images/large/${image.image}" 
-                                         class="img-fluid" alt="${product.product_name}">
-                                </div>
-                            `;
+                                    <div class="item">
+                                        <img src="/front/images/product_images/large/${image.image}" 
+                                            class="img-fluid" alt="${product.product_name}">
+                                    </div>
+                                `;
                                     thumbsHtml += `
-                                <button class="owl-thumb-item">
-                                    <img src="/front/images/product_images/small/${image.image}" 
-                                         class="" alt="${product.product_name}">
-                                </button>
-                            `;
+                                    <button class="owl-thumb-item">
+                                        <img src="/front/images/product_images/small/${image.image}" 
+                                            alt="${product.product_name}">
+                                    </button>
+                                `;
                                 });
                             } else {
                                 galleryHtml = `
-                            <div class="item">
-                                <img src="/assets/images/no-product-image.png" 
-                                     class="img-fluid" alt="No Image">
-                            </div>
-                        `;
+                                <div class="item">
+                                    <img src="/assets/images/no-product-image.png" 
+                                        class="img-fluid" alt="No Image">
+                                </div>
+                            `;
                                 thumbsHtml = `
-                            <button class="owl-thumb-item">
-                                <img src="/assets/images/no-product-image.png" 
-                                     class="" alt="No Image">
-                            </button>
-                        `;
+                                <button class="owl-thumb-item">
+                                    <img src="/assets/images/no-product-image.png" alt="No Image">
+                                </button>
+                            `;
                             }
 
-                            // Build size options
+                            // size options banani hain groupedAttributes se
                             var sizeOptions = '';
-                            if (attributes.length > 0) {
-                                attributes.forEach(function(attr) {
+                            if (attributes["Size"]) {
+                                attributes["Size"].values.forEach(function(val) {
                                     sizeOptions +=
-                                        `<option value="${attr.size}">${attr.size}</option>`;
+                                        `<option value="${val.value}">${val.value}</option>`;
                                 });
                             } else {
                                 sizeOptions = '<option>One Size</option>';
                             }
 
-                            // Calculate discounted price
+                            // price calculate karna (API se)
                             var originalPrice = parseFloat(product.product_price);
-                            var discount = parseFloat(product.product_discount) || 0;
-                            var finalPrice = discount > 0 ? originalPrice - (originalPrice *
-                                discount / 100) : originalPrice;
-
-                            // Build price HTML
+                            var finalPrice = parseFloat(product.discounted_price);
                             var priceHtml = '';
-                            if (discount > 0) {
+                            if (!isNaN(finalPrice) && finalPrice < originalPrice) {
                                 priceHtml = `
-                            <h5 class="mb-0 text-decoration-line-through text-muted">Rs. ${originalPrice}</h5>
-                            <h4 class="mb-0">Rs. ${finalPrice.toFixed(2)}</h4>
-                        `;
+                                    <h5 class="mb-0 text-decoration-line-through text-muted">Rs. ${originalPrice.toFixed(2)}</h5>
+                                    <h4 class="mb-0 text-danger">Rs. ${finalPrice.toFixed(2)}</h4>
+                                `;
                             } else {
-                                priceHtml = `<h4 class="mb-0">Rs. ${originalPrice}</h4>`;
+                                priceHtml =
+                                    `<h4 class="mb-0">Rs. ${originalPrice.toFixed(2)}</h4>`;
                             }
-
-                            // Build complete modal HTML with Bootstrap 4.6 classes
+                            // modal ka content
                             var modalHtml = `
-                        <button type="button" class="close float-right" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <div class="row no-gutters">
-                            <div class="col-12 col-lg-6">
-                                <div class="image-zoom-section">
-                                    <div class="product-gallery owl-carousel owl-theme border mb-3 p-3" data-slider-id="1">
-                                        ${galleryHtml}
-                                    </div>
-                                    <div class="owl-thumbs d-flex justify-content-center" data-slider-id="1">
-                                        ${thumbsHtml}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-lg-6">
-                                <div class="product-info-section p-3">
-                                    <h3 class="mt-3 mt-lg-0 mb-0">${product.product_name}</h3>
-                                    <div class="product-rating d-flex align-items-center mt-2">
-                                        <div class="rates cursor-pointer font-13">
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                            <i class="bx bxs-star text-warning"></i>
-                                        </div>
-                                        <div class="ml-1">
-                                            <p class="mb-0">(${product.reviews_count || 0} Reviews)</p>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-3" style="gap: 0.5rem;">
-                                        ${priceHtml}
-                                    </div>
-                                    <div class="mt-3">
-                                        <h6>Description:</h6>
-                                        <p class="mb-0">${product.description || 'No description available.'}</p>
-                                    </div>
-                                    <dl class="row mt-3">
-                                        <dt class="col-sm-3">Product Code</dt>
-                                        <dd class="col-sm-9">${product.product_code}</dd>
-                                        <dt class="col-sm-3">Category</dt>
-                                        <dd class="col-sm-9">${product.category_name || 'N/A'}</dd>
-                                        <dt class="col-sm-3">Status</dt>
-                                        <dd class="col-sm-9">
-                                            <span class="badge ${product.is_featured ? 'badge-success' : 'badge-secondary'}">
-                                                ${product.is_featured ? 'Featured' : 'Regular'}
-                                            </span>
-                                        </dd>
-                                    </dl>
-                                    <div class="row align-items-end mt-3">
-                                        <div class="col-auto">
-                                            <label class="form-label mb-1">Quantity</label>
-                                            <select class="form-control form-control-sm" id="quickview-quantity">
-                                                <option value="1">1</option>
-                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-auto">
-                                            <label class="form-label mb-1">Size</label>
-                                            <select class="form-control form-control-sm" id="quickview-size">
-                                                ${sizeOptions}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex mt-4" style="gap: 0.5rem;">
-                                        <button class="btn btn-dark btn-ecomm add-to-cart-quickview" 
-                                                data-product-id="${product.id}">
-                                            <i class="bx bxs-cart-add"></i> Add to Cart
-                                        </button>
-                                        <button class="btn btn-outline-dark btn-ecomm add-to-wishlist-quickview" 
-                                                data-product-id="${product.id}">
-                                            <i class="bx bx-heart"></i> Add to Wishlist
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                                            <button type="button" class="close float-right" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                            <div class="row no-gutters">
+                                                <div class="col-12 col-lg-6">
+                                                    <div class="image-zoom-section">
+                                                        <div class="product-gallery owl-carousel owl-theme border mb-3 p-3" data-slider-id="1">
+                                                            ${galleryHtml}
+                                                        </div>
+                                                        <div class="owl-thumbs d-flex justify-content-center" data-slider-id="1">
+                                                            ${thumbsHtml}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-lg-6">
+                                                    <div class="product-info-section p-3">
+                                                        <h3 class="mt-3 mt-lg-0 mb-0">${product.product_name}</h3>
+                                                        <div class="product-rating d-flex align-items-center mt-2">
+                                                            <div class="rates cursor-pointer font-13">
+                                                                <i class="bx bxs-star text-warning"></i>
+                                                                <i class="bx bxs-star text-warning"></i>
+                                                                <i class="bx bxs-star text-warning"></i>
+                                                                <i class="bx bxs-star text-warning"></i>
+                                                                <i class="bx bxs-star text-warning"></i>
+                                                            </div>
+                                                            <div class="ml-1">
+                                                                <p class="mb-0">(${response.ratings.length || 0} Reviews)</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex align-items-center mt-3" style="gap: 0.5rem;">
+                                                            ${priceHtml}
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <h6>Description:</h6>
+                                                            <p class="mb-0">${product.description || 'No description available.'}</p>
+                                                        </div>
+                                                        <dl class="row mt-3">
+                                                            <dt class="col-sm-3">Brand</dt>
+                                                            <dd class="col-sm-9">${product.brand ? product.brand.name : 'N/A'}</dd>
 
+                                                            <dt class="col-sm-3">Stock</dt>
+                                                            <dd class="col-sm-9">${product.stock_status || 'N/A'}</dd>
+
+                                                            <dt class="col-sm-3">Status</dt>
+                                                            <dd class="col-sm-9">
+                                                                <span class="badge ${product.is_featured ? 'badge-success' : 'badge-secondary'}">
+                                                                    ${product.is_featured ? 'Featured' : 'Regular'}
+                                                                </span>
+                                                            </dd>
+                                                        </dl>
+                                                        <div class="row align-items-end mt-3">
+                                                            <div class="col-auto">
+                                                                <label class="form-label mb-1">Quantity</label>
+                                                                <select class="form-control form-control-sm" id="quickview-quantity">
+                                                                    <option value="1">1</option>
+                                                                    <option value="2">2</option>
+                                                                    <option value="3">3</option>
+                                                                    <option value="4">4</option>
+                                                                    <option value="5">5</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <label class="form-label mb-1">Size</label>
+                                                                <select class="form-control form-control-sm" id="quickview-size">
+                                                                    ${sizeOptions}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex mt-4" style="gap: 0.5rem;">
+                                                            <button class="btn btn-dark btn-ecomm add-to-cart-quickview" 
+                                                                    data-product-id="${product.id}">
+                                                                <i class="bx bxs-cart-add"></i> Add to Cart
+                                                            </button>
+                                                            <button class="btn btn-outline-dark btn-ecomm add-to-wishlist-quickview" 
+                                                                    data-product-id="${product.id}">
+                                                                <i class="bx bx-heart"></i> Add to Wishlist
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+
+                            // modal me inject karo
                             modal.find('.modal-body').html(modalHtml);
 
-                            // Initialize Owl Carousel after content is loaded
+                            // owl carousel init
                             setTimeout(function() {
                                 if ($('.product-gallery').length && !$(
                                         '.product-gallery').hasClass('owl-loaded')) {
@@ -843,26 +905,26 @@ $categorys = \App\Models\Category::categories();
 
                         } else {
                             modal.find('.modal-body').html(`
-                        <div class="text-center py-5">
-                            <i class="bx bx-error-circle text-danger" style="font-size: 48px;"></i>
-                            <h5 class="mt-3">Error Loading Product</h5>
-                            <p>${response.message || 'Unable to load product details'}</p>
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        </div>
-                    `);
+                            <div class="text-center py-5">
+                                <i class="bx bx-error-circle text-danger" style="font-size: 48px;"></i>
+                                <h5 class="mt-3">Error Loading Product</h5>
+                                <p>${response.message || 'Unable to load product details'}</p>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        `);
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', xhr.responseText);
                         modal.find('.modal-body').html(`
-                    <div class="text-center py-5">
-                        <i class="bx bx-wifi-off text-warning" style="font-size: 48px;"></i>
-                        <h5 class="mt-3">Connection Error</h5>
-                        <p>Unable to load product details. Please check console for errors.</p>
-                        <button type="button" class="btn btn-primary" onclick="location.reload()">Retry</button>
-                        <button type="button" class="btn btn-secondary ml-2" data-dismiss="modal">Close</button>
-                    </div>
-                `);
+                            <div class="text-center py-5">
+                                <i class="bx bx-wifi-off text-warning" style="font-size: 48px;"></i>
+                                <h5 class="mt-3">Connection Error</h5>
+                                <p>Unable to load product details. Please check console for errors.</p>
+                                <button type="button" class="btn btn-primary" onclick="location.reload()">Retry</button>
+                                <button type="button" class="btn btn-secondary ml-2" data-dismiss="modal">Close</button>
+                            </div>
+                        `);
                     }
                 });
             });
@@ -954,10 +1016,17 @@ $categorys = \App\Models\Category::categories();
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Wishlist Error:', xhr.responseText);
-                        button.prop('disabled', false)
-                            .html('<i class="bx bx-heart mr-1"></i> Add to Wishlist');
-                        showNotification('Error adding to wishlist', 'error');
+                        if (xhr.status === 401) {
+                            showNotification('Please login to manage your wishlist.', 'error');
+                            setTimeout(function() {
+                                window.location.href = '/login';
+                            }, 1500);
+                        } else {
+                            console.error('Wishlist Error:', xhr.responseText);
+                            button.prop('disabled', false)
+                                .html('<i class="bx bx-heart mr-1"></i> Add to Wishlist');
+                            showNotification('Error adding to wishlist', 'error');
+                        }
                     }
                 });
             });
@@ -973,7 +1042,7 @@ $categorys = \App\Models\Category::categories();
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-        `;
+                 `;
 
                 $('body').append(notification);
 
@@ -988,13 +1057,13 @@ $categorys = \App\Models\Category::categories();
         // Bootstrap 4.6 Modal Event Handlers
         $('#QuickViewProduct').on('hidden.bs.modal', function() {
             $(this).find('.modal-body').html(`
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-3">Loading product details...</p>
             </div>
-            <p class="mt-3">Loading product details...</p>
-        </div>
-    `);
+            `);
 
             // Destroy owl carousel if exists
             if ($('.product-gallery').hasClass('owl-loaded')) {
@@ -1002,5 +1071,44 @@ $categorys = \App\Models\Category::categories();
                     .removeClass('owl-loaded owl-drag owl-grab');
             }
         });
+        $(document).on('click', '.owl-thumb-item', function() {
+            var index = $(this).index();
+            $('.product-gallery').trigger('to.owl.carousel', [index, 300, true]);
+        });
     </script>
+    {{-- <script>
+        $(document).ready(function() {
+            $(document).on('click', '.add-to-wishlist', function(e) {
+                e.preventDefault(); 
+                let productId = $(this).data('id');
+
+                $.ajax({
+                    url: '/wishlist/add',
+                    type: 'POST',
+                    data: {
+                        product_id: productId,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('Product added to wishlist!');
+                        } else {
+                            showToast(response.message || 'Something went wrong.');
+                        }
+                    },
+                    error: function() {
+                        showToast('Unable to add to wishlist. Please try again.');
+                    }
+                });
+            });
+
+            function showToast(message) {
+                $('#wishlistToastText').text(message);
+                $('#wishlistToast').fadeIn(300);
+                setTimeout(function() {
+                    $('#wishlistToast').fadeOut(500);
+                }, 3000);
+            }
+        });
+    </script> --}}
 @endsection

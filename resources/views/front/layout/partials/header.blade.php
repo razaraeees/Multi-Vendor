@@ -138,7 +138,7 @@ $categorys = \App\Models\Category::categories();
                                     </div>
                                 </li>
 
-                                <li class="nav-item"><a href="wishlist.html" class="nav-link cart-link"><i
+                                <li class="nav-item"><a href="{{ url('/wishlist') }}" class="nav-link cart-link"><i
                                             class='bx bx-heart'></i></a>
                                 </li>
                                 <li class="nav-item dropdown dropdown-large">

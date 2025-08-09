@@ -156,11 +156,14 @@ class ProductsController extends Controller
     public function quickView($id)
     {
         try {
-            // Get product with category relationship
-            $product = Product::with(['category', 'images', 'attributes'])
-                ->where('id', $id)
-                ->where('status', 1) // Only active products
-                ->first();
+            // 1. Product with relationships
+            $product = Product::with([
+                'category',
+                'brand',
+                'attributes',
+                'images',
+                'vendor'
+            ])->find($id);
 
             if (!$product) {
                 return response()->json([
@@ -169,38 +172,148 @@ class ProductsController extends Controller
                 ], 404);
             }
 
-            // Get product images
-            $images = ProductsImage::where('product_id', $id)->get();
+            $productDetails = $product->toArray();
 
-            // Get product attributes (no status filter)
-            $attributes = ProductsAttribute::where('product_id', $id)
+            // === Discount Calculation ===
+            $originalPrice = $product->price;
+            $discountedPrice = null;
+
+            if (!empty($product->discount_percent) && $product->discount_percent > 0) {
+                // Percentage based discount
+                $discountedPrice = round($originalPrice - ($originalPrice * $product->discount_percent / 100), 2);
+            } elseif (!empty($product->discount_amount) && $product->discount_amount > 0) {
+                // Fixed amount discount
+                $discountedPrice = max(round($originalPrice - $product->discount_amount, 2), 0);
+            }
+
+            $productDetails['original_price'] = $originalPrice;
+            $productDetails['discounted_price'] = $discountedPrice;
+
+            // 2. Category breadcrumbs
+            $categoryDetails = Category::categoryDetails($product->category->url);
+
+            // 3. Similar products
+            $similarProducts = Product::with('brand')
+                ->where('category_id', $product->category->id)
+                ->where('id', '!=', $id)
+                ->inRandomOrder()
+                ->limit(4)
+                ->get()
+                ->toArray();
+
+            // 4. Session ID
+            $sessionId = Session::get('session_id') ?? md5(uniqid(rand(), true));
+            Session::put('session_id', $sessionId);
+
+            // 5. Recently viewed products
+            DB::table('recently_viewed_products')->updateOrInsert([
+                'product_id' => $id,
+                'session_id' => $sessionId
+            ]);
+
+            $recentProductIds = DB::table('recently_viewed_products')
+                ->where('session_id', $sessionId)
+                ->where('product_id', '!=', $id)
+                ->inRandomOrder()
+                ->limit(4)
+                ->pluck('product_id');
+
+            $recentlyViewedProducts = Product::with('brand')
+                ->whereIn('id', $recentProductIds)
+                ->get()
+                ->toArray();
+
+            // 6. Group products
+            $groupProducts = [];
+            if (!empty($product->group_code)) {
+                $groupProducts = Product::select('id', 'product_image')
+                    ->where('id', '!=', $id)
+                    ->where('group_code', $product->group_code)
+                    ->where('status', 1)
+                    ->get()
+                    ->toArray();
+            }
+
+            // 7. Ratings & reviews
+            $ratings = Rating::with('user')
+                ->where('product_id', $id)
+                ->where('status', 1)
+                ->get()
+                ->toArray();
+
+            $ratingSum = Rating::where('product_id', $id)->where('status', 1)->sum('rating');
+            $ratingCount = Rating::where('product_id', $id)->where('status', 1)->count();
+
+            $avgRating = $ratingCount > 0 ? round($ratingSum / $ratingCount, 2) : 0;
+            $avgStarRating = $ratingCount > 0 ? round($ratingSum / $ratingCount) : 0;
+
+            $starCounts = collect(range(1, 5))->mapWithKeys(function ($star) use ($id) {
+                return ["rating{$star}StarCount" => Rating::where([
+                    'product_id' => $id,
+                    'status' => 1,
+                    'rating' => $star
+                ])->count()];
+            });
+
+            // 8. Group attributes
+            $productAttributes = ProductsAttribute::with(['attribute', 'attributeValue', 'product'])
+                ->where('product_id', $id)
                 ->get();
 
-            // Calculate discounted price
-            $discountedPrice = Product::getDiscountPrice($id);
+            $groupedAttributes = [];
+            foreach ($productAttributes as $productAttr) {
+                if ($productAttr->attribute && $productAttr->attributeValue) {
+                    $attributeName = $productAttr->attribute->name;
+                    $attributeValue = $productAttr->attributeValue->value;
+                    $attributeType = $productAttr->attribute->attribute_type;
 
-            // Prepare response data
-            $productData = [
-                'id' => $product->id,
-                'product_name' => $product->product_name,
-                'product_code' => $product->product_code,
-                'product_price' => $product->product_price,
-                'product_discount' => $product->product_discount,
-                'discounted_price' => $discountedPrice,
-                'description' => $product->description,
-                'is_featured' => $product->is_featured,
-                'status' => $product->status,
-                'category_name' => $product->category ? $product->category->category_name : null,
-                'reviews_count' => 0, // You can implement this based on your reviews system
-                'stock_quantity' => $product->stock_quantity ?? 0
-            ];
+                    if (!isset($groupedAttributes[$attributeName])) {
+                        $groupedAttributes[$attributeName] = [
+                            'attribute_type' => $attributeType,
+                            'attribute_id' => $productAttr->attribute->id,
+                            'values' => []
+                        ];
+                    }
+
+                    $groupedAttributes[$attributeName]['values'][] = [
+                        'value' => $attributeValue,
+                        'product_attr_id' => $productAttr->id,
+                        'attribute_value_id' => $productAttr->attributeValue->id,
+                        'price' => $productAttr->price ?? 0,
+                        'stock' => $productAttr->stock ?? 0
+                    ];
+                }
+            }
+
+            // 9. Stock
+            $totalStock = $product->stock ?? 0;
+            if ($productAttributes->count() > 0) {
+                $totalStock = $productAttributes->sum('stock') ?: $totalStock;
+            }
+            $stockStatus = $product->stock_status ?? 'out_of_stock';
+
+            // 10. Meta tags
+            $meta_title = $product->meta_title;
+            $meta_description = $product->meta_description;
+            $meta_keywords = $product->meta_keywords;
 
             return response()->json([
                 'success' => true,
-                'product' => $productData,
-                'images' => $images->toArray(),
-                'attributes' => $attributes->toArray(),
-                'message' => 'Product details loaded successfully'
+                'productDetails' => $productDetails,
+                'categoryDetails' => $categoryDetails,
+                'totalStock' => $totalStock,
+                'stockStatus' => $stockStatus,
+                'similarProducts' => $similarProducts,
+                'recentlyViewedProducts' => $recentlyViewedProducts,
+                'groupProducts' => $groupProducts,
+                'groupedAttributes' => $groupedAttributes,
+                'meta_title' => $meta_title,
+                'meta_description' => $meta_description,
+                'meta_keywords' => $meta_keywords,
+                'ratings' => $ratings,
+                'avgRating' => $avgRating,
+                'avgStarRating' => $avgStarRating,
+                'starCounts' => $starCounts->toArray()
             ]);
         } catch (\Exception $e) {
             Log::error('QuickView Error: ' . $e->getMessage());
@@ -466,35 +579,37 @@ class ProductsController extends Controller
     // Render Cart page (front/products/cart.blade.php)    
     public function cart(Request $request)
     {
-        // Cart items get karo
         $getCartItems = Cart::getCartItems();
 
         foreach ($getCartItems as &$item) {
-            // Attributes decode karo
-            $attributes = json_decode($item['attributes'], true) ?? [];
+            // Agar koi item ka product nahi hai (filter ke baad bhi), skip
+            if (!$item->product) {
+                continue;
+            }
 
-            // Stock check ke liye attribute_value_id ka use karo
-            // Pehle price nikalte the size se, ab hum multiple attributes se price nikalenge
-            // For now price calculation same rakh rahe hain (update if needed)
+            $selectedAttrs = $item->selected_attributes;
+
+            if (!is_array($selectedAttrs)) {
+                $selectedAttrs = [];
+            }
+
             $priceData = \App\Models\Product::getDiscountAttributePrice(
-                $item['product_id'],
-                $attributes // Pass whole attributes array to your function
+                $item->product_id,
+                $selectedAttrs
             );
 
-            $item['unit_price'] = $priceData['final_price'];
+            // Dynamic properties set kar raha hai
+            $item['unit_price']     = $priceData['final_price'];
             $item['original_price'] = $priceData['product_price'];
-            $item['discount'] = $priceData['discount'];
-            $item['total_price'] = $priceData['final_price'] * $item['quantity'];
-            $item['attributes_list'] = $attributes; // frontend display ke liye
+            $item['discount']       = $priceData['discount'];
+            $item['total_price']    = $priceData['final_price'] * $item->quantity;
+            $item['attributes_list'] = $selectedAttrs;
         }
 
-        // Total calculation
         $total_price = collect($getCartItems)->sum('total_price');
 
         return view('front.products.cart', compact('getCartItems', 'total_price'));
     }
-
-
     public function cartUpdate(Request $request)
     {
         $data = $request->all();
@@ -880,7 +995,6 @@ class ProductsController extends Controller
         }
     }
 
-    // Rendering Thanks page (after placing an order)    
     public function thanks()
     {
         if (Session::has('order_id')) { // if there's an order has been placed, empty the Cart (remove the order (the cart items/products) from `carts`table)    // 'user_id' was stored in Session inside checkout() method in Front/ProductsController.php

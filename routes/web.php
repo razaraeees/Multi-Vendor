@@ -16,7 +16,7 @@ use App\Http\Controllers\Front\AddressController;
 use App\Http\Controllers\Front\PaypalController;
 use App\Http\Controllers\Front\IyzipayController;
 use App\Http\Controllers\AttributeController;
-
+use App\Http\Controllers\Front\WishlistController;
 
 // ADMIN CONTROLLERS
 use App\Http\Controllers\Admin\AdminController;
@@ -175,6 +175,11 @@ Route::prefix('/')->name('front.')->group(function () {
     Route::post('/cart/delete', [FrontProductsController::class, 'cartDelete']);
 
 
+     Route::get('/wishlist', [WishlistController::class, 'index']);
+
+        Route::post('/wishlist/add', [WishlistController::class, 'addWishlist'])->name('wishlist.add');
+        Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist'])->name('wishlist.remove');
+
     // User Auth
     Route::get('user/login-register', [FrontUserController::class, 'loginRegister'])->name('login');
     Route::post('user/register', [FrontUserController::class, 'userRegister']);
@@ -202,6 +207,9 @@ Route::prefix('/')->name('front.')->group(function () {
         Route::get('user/orders/{id?}', [FrontOrderController::class, 'orders']);
 
         // Address
+
+        
+
         Route::post('get-delivery-address', [AddressController::class, 'getDeliveryAddress']);
         Route::post('save-delivery-address', [AddressController::class, 'saveDeliveryAddress']);
         Route::post('remove-delivery-address', [AddressController::class, 'removeDeliveryAddress']);
