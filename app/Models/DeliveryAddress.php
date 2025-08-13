@@ -11,8 +11,6 @@ class DeliveryAddress extends Model
 {
     use HasFactory;
 
-
-    // Mass Assignment: https://laravel.com/docs/10.x/eloquent#mass-assignment
     protected $fillable = [
         'user_id', 'name', 'address', 'city', 'state', 'country', 'pincode', 'status', 'mobile'
     ];

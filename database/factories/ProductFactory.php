@@ -18,7 +18,7 @@ class ProductFactory extends Factory
     {
         $productName = $this->faker->words(3, true); // e.g., "Wireless Bluetooth Speaker"
         return [
-            'category_id'       => 3,
+            'category_id'       => 1,
             'brand_id'          => 1,
             'vendor_id'         => 0,
             'admin_id'          => 1,

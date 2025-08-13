@@ -15,9 +15,7 @@ return new class extends Migration
     {
         Schema::create('delivery_addresses', function (Blueprint $table) {
             $table->id();
-
-            
-            $table->integer('user_id');
+            $table->integer('user_id')->nullable();
             $table->string('name');
             $table->string('address');
             $table->string('city');

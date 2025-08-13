@@ -19,11 +19,11 @@ class Product extends Model
 
 
 
-    // Every 'product' belongs to a 'section'
-    public function section()
-    {
-        return $this->belongsTo('App\Models\Section', 'section_id'); // 'section_id' is the foreign key
-    }
+    // // Every 'product' belongs to a 'section'
+    // public function section()
+    // {
+    //     return $this->belongsTo('App\Models\Section', 'section_id'); // 'section_id' is the foreign key
+    // }
 
     // Every 'product' belongs to a 'category'
     public function category()
@@ -98,32 +98,35 @@ class Product extends Model
         return $price; // Ya 0 return karne ki jagah original price return karo (best practice)
     }
 
-    public static function getDiscountAttributePrice($product_id, $attributes = null)
+    public static function getDiscountAttributePrice($product_id, $attributes = [])
     {
-        // $attributes can be:
-        // - null
-        // - a string (legacy 'size')
-        // - an array of ['attribute_id' => X, 'attribute_value_id' => Y] items
+        $proDetails = Product::select('product_price', 'product_discount', 'category_id')
+            ->find($product_id);
 
-        // Build query
+        if (!$proDetails) {
+            return [
+                'product_price' => 0,
+                'final_price'   => 0,
+                'discount'      => 0
+            ];
+        }
+
+        $price = (float) $proDetails->product_price;
         $query = \App\Models\ProductsAttribute::where('product_id', $product_id);
 
-        if (is_string($attributes) && $attributes !== '') {
-            // legacy: size string
-            $query->where('size', $attributes);
-        } elseif (is_array($attributes) && count($attributes) > 0) {
-            // attributes array: add where clauses for each pair
+        if (is_array($attributes) && count($attributes) > 0) {
             foreach ($attributes as $attr) {
-                if (isset($attr['attribute_id']) && isset($attr['attribute_value_id'])) {
-                    $query->where('attribute_id', $attr['attribute_id'])
-                        ->where('attribute_value_id', $attr['attribute_value_id']);
+                if (!empty($attr['attribute_id']) && !empty($attr['attribute_value_id'])) {
+                    $query->where(function ($q) use ($attr) {
+                        $q->where('attribute_id', $attr['attribute_id'])
+                            ->where('attribute_value_id', $attr['attribute_value_id']);
+                    });
                 }
             }
-        } // else no extra filters (will pick first matching product attribute)
+        }
 
         $proAttr = $query->first();
 
-        // If no attribute row found, return zeros (safe)
         if (!$proAttr) {
             Log::warning("getDiscountAttributePrice(): ProductsAttribute not found", [
                 'product_id' => $product_id,
@@ -136,34 +139,16 @@ class Product extends Model
             ];
         }
 
-        // Determine the price column safely (some tables use different column names)
-        $pa = $proAttr->toArray();
-        $price = null;
-        if (array_key_exists('price', $pa)) {
-            $price = (float)$pa['price'];
-        } elseif (array_key_exists('product_price', $pa)) {
-            $price = (float)$pa['product_price'];
-        } elseif (array_key_exists('attr_price', $pa)) {
-            $price = (float)$pa['attr_price'];
-        } else {
-            Log::warning("getDiscountAttributePrice(): price column missing on products_attributes", ['products_attributes_row' => $pa]);
-            return [
-                'product_price' => 0,
-                'final_price'   => 0,
-                'discount'      => 0
-            ];
-        }
-
-        // Get product and category discounts (safe)
-        $proDetails = Product::select('product_discount', 'category_id')->find($product_id);
+        // Category discount lete hain
         $productDiscount = $proDetails->product_discount ?? 0;
         $categoryDiscount = 0;
+
         if (!empty($proDetails->category_id)) {
             $cat = Category::select('category_discount')->find($proDetails->category_id);
             $categoryDiscount = $cat->category_discount ?? 0;
         }
 
-        // Calculate final price and discount
+        // Final price calculate
         if ($productDiscount > 0) {
             $final_price = $price - ($price * $productDiscount / 100);
             $discount = $price - $final_price;
@@ -175,12 +160,15 @@ class Product extends Model
             $discount = 0;
         }
 
+        
+
         return [
             'product_price' => round($price, 2),
             'final_price'   => round($final_price, 2),
             'discount'      => round($discount, 2)
         ];
     }
+
 
 
 

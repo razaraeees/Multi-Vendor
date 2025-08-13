@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Cart;
+use Illuminate\Support\Facades\Auth;
 // Creating the 'Helpers' folder and the 'CUSTOM' 'Helper.php' file, then autoload/register it in 'composer.json' file
 // echo 'Testing this Helper.php \'CUSTOM\' file<br>';
 
@@ -54,4 +55,11 @@ function getCartItems() { // this method is called (used) in cart() method in Fr
 
 
     return $getCartItems;
+}
+// Controller ya helper function me
+function totalWishlistItems() {
+    if(Auth::check()){
+        return \App\Models\Wishlist::where('user_id', Auth::id())->count();
+    }
+    return 0;
 }

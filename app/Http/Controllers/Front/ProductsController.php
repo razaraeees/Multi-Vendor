@@ -574,35 +574,67 @@ class ProductsController extends Controller
         }
     }
 
-
-
-    // Render Cart page (front/products/cart.blade.php)    
     public function cart(Request $request)
     {
         $getCartItems = Cart::getCartItems();
 
         foreach ($getCartItems as &$item) {
-            // Agar koi item ka product nahi hai (filter ke baad bhi), skip
             if (!$item->product) {
                 continue;
             }
 
+            // 🔥 Fix: Handle selected_attributes properly
             $selectedAttrs = $item->selected_attributes;
 
-            if (!is_array($selectedAttrs)) {
+            // Handle both string and array formats
+            if (is_string($selectedAttrs)) {
+                $selectedAttrs = json_decode($selectedAttrs, true) ?? [];
+            } elseif (!is_array($selectedAttrs)) {
                 $selectedAttrs = [];
             }
 
-            $priceData = \App\Models\Product::getDiscountAttributePrice(
-                $item->product_id,
-                $selectedAttrs
-            );
+            // Get product details
+            $product = \App\Models\Product::select(
+                'product_price',
+                'product_discount',
+                'category_id'
+            )->find($item->product_id);
 
-            // Dynamic properties set kar raha hai
-            $item['unit_price']     = $priceData['final_price'];
-            $item['original_price'] = $priceData['product_price'];
-            $item['discount']       = $priceData['discount'];
-            $item['total_price']    = $priceData['final_price'] * $item->quantity;
+            if (!$product) {
+                $item['unit_price']     = 0;
+                $item['original_price'] = 0;
+                $item['discount']       = 0;
+                $item['total_price']    = 0;
+                $item['attributes_list'] = $selectedAttrs;
+                continue;
+            }
+
+            $price = (float) $product->product_price;
+
+            // Category discount
+            $categoryDiscount = 0;
+            if (!empty($product->category_id)) {
+                $cat = \App\Models\Category::select('category_discount')->find($product->category_id);
+                $categoryDiscount = $cat->category_discount ?? 0;
+            }
+
+            // Calculate final price & discount
+            if ($product->product_discount > 0) {
+                $final_price = $price - ($price * $product->product_discount / 100);
+                $discount = $price - $final_price;
+            } elseif ($categoryDiscount > 0) {
+                $final_price = $price - ($price * $categoryDiscount / 100);
+                $discount = $price - $final_price;
+            } else {
+                $final_price = $price;
+                $discount = 0;
+            }
+
+            // Assign values
+            $item['unit_price']     = round($final_price, 2);
+            $item['original_price'] = round($price, 2);
+            $item['discount']       = round($discount, 2);
+            $item['total_price']    = round($final_price * $item->quantity, 2);
             $item['attributes_list'] = $selectedAttrs;
         }
 
@@ -610,49 +642,151 @@ class ProductsController extends Controller
 
         return view('front.products.cart', compact('getCartItems', 'total_price'));
     }
+
     public function cartUpdate(Request $request)
     {
         $data = $request->all();
 
+        // Debug - yeh line add karo temporary
+        Log::info('Cart Update Data:', $data);
+
+        // ✅ Coupon reset
         Session::forget('couponAmount');
         Session::forget('couponCode');
 
+        if (empty($data['items'])) {
+            return redirect()->back()->with('error', 'No items to update');
+        }
+
         foreach ($data['items'] as $item) {
+            if (empty($item['id']) || empty($item['quantity'])) {
+                continue;
+            }
+
             $cartDetails = Cart::find($item['id']);
             if (!$cartDetails) continue;
 
-            $attributes = json_decode($cartDetails['attributes'], true) ?? [];
+            // ✅ Quantity validation
+            $quantity = (int) $item['quantity'];
+            if ($quantity < 1) $quantity = 1;
+            if ($quantity > 10) $quantity = 10;
 
-            // ✅ Stock check: attribute_value_id ke basis pe
-            $query = ProductsAttribute::where('product_id', $cartDetails['product_id']);
-            foreach ($attributes as $attr) {
-                $query->where('attribute_id', $attr['attribute_id'])
-                    ->where('attribute_value_id', $attr['attribute_value_id']);
-            }
-            $availableStock = $query->value('stock');
-
-            if ($availableStock && $item['quantity'] > $availableStock) {
+            // ✅ Stock check
+            $productStock = Product::where('id', $cartDetails['product_id'])->value('stock');
+            if ($productStock && $quantity > $productStock) {
                 return redirect()->back()->with('error', 'Product stock is not available for some items');
             }
 
             // ✅ Attribute availability check
-            $queryStatus = ProductsAttribute::where('product_id', $cartDetails['product_id']);
-            foreach ($attributes as $attr) {
-                $queryStatus->where('attribute_id', $attr['attribute_id'])
-                    ->where('attribute_value_id', $attr['attribute_value_id'])
-                    ->where('status', 1);
-            }
-            if ($queryStatus->count() == 0) {
-                return redirect()->back()->with('error', 'Some product attributes are not available. Please update your cart.');
+            $attributes = $cartDetails['selected_attributes'];
+
+            // Handle both string (JSON) and array formats
+            if (is_string($attributes)) {
+                $attributes = json_decode($attributes, true) ?? [];
+            } elseif (!is_array($attributes)) {
+                $attributes = [];
             }
 
-            // Update quantity
-            $cartDetails->quantity = $item['quantity'];
+            if (!empty($attributes)) {
+                $queryStatus = ProductsAttribute::where('product_id', $cartDetails['product_id']);
+
+                foreach ($attributes as $attr) {
+                    if (isset($attr['attribute_id']) && isset($attr['attribute_value_id'])) {
+                        $queryStatus->where('attribute_id', $attr['attribute_id'])
+                            ->where('attribute_value_id', $attr['attribute_value_id'])
+                            ->where('status', 1);
+                    }
+                }
+
+                if ($queryStatus->count() == 0) {
+                    return redirect()->back()->with('error', 'Some product attributes are not available. Please update your cart.');
+                }
+            }
+
+            // ✅ Quantity update
+            $cartDetails->quantity = $quantity;
             $cartDetails->save();
         }
 
         return redirect()->back()->with('success', 'Cart updated successfully!');
     }
+
+    // Add this new method for AJAX quantity updates
+    public function updateQuantity(Request $request)
+    {
+        if ($request->ajax()) {
+            $cartid = $request->cartid;
+            $quantity = (int) $request->quantity;
+
+            if ($quantity < 1) $quantity = 1;
+            if ($quantity > 10) $quantity = 10;
+
+            $cartItem = Cart::find($cartid);
+            if (!$cartItem) {
+                return response()->json(['status' => false, 'message' => 'Cart item not found']);
+            }
+
+            // Stock check
+            $product = Product::find($cartItem->product_id);
+            if ($product && $product->stock && $quantity > $product->stock) {
+                return response()->json(['status' => false, 'message' => 'Insufficient stock']);
+            }
+
+            // Update quantity
+            $cartItem->quantity = $quantity;
+            $cartItem->save();
+
+            // Calculate new totals
+            $getCartItems = Cart::getCartItems();
+            $totalCartItems = count($getCartItems);
+
+            // Recalculate prices (same logic as your cart method)
+            foreach ($getCartItems as &$item) {
+                if (!$item->product) continue;
+
+                $product = Product::select('product_price', 'product_discount', 'category_id')
+                    ->find($item->product_id);
+
+                if (!$product) continue;
+
+                $price = (float) $product->product_price;
+
+                // Category discount
+                $categoryDiscount = 0;
+                if (!empty($product->category_id)) {
+                    $cat = Category::select('category_discount')->find($product->category_id);
+                    $categoryDiscount = $cat->category_discount ?? 0;
+                }
+
+                // Calculate final price
+                if ($product->product_discount > 0) {
+                    $final_price = $price - ($price * $product->product_discount / 100);
+                } elseif ($categoryDiscount > 0) {
+                    $final_price = $price - ($price * $categoryDiscount / 100);
+                } else {
+                    $final_price = $price;
+                }
+
+                $item['unit_price'] = round($final_price, 2);
+                $item['total_price'] = round($final_price * $item->quantity, 2);
+            }
+
+            $cartTotal = collect($getCartItems)->sum('total_price');
+
+            // Get updated item total
+            $updatedItem = $getCartItems->where('id', $cartid)->first();
+            $itemTotal = $updatedItem ? $updatedItem['total_price'] : 0;
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Quantity updated',
+                'cartTotal' => $cartTotal,
+                'totalCartItems' => $totalCartItems,
+                'itemTotal' => $itemTotal
+            ]);
+        }
+    }
+
 
     // Delete a Cart Item AJAX call in front/products/cart_items.blade.php. Check front/js/custom.js    
     public function cartDelete(Request $request)
@@ -789,53 +923,100 @@ class ProductsController extends Controller
 
 
 
-    // Checkout page (using match() method for the 'GET' request for rendering the front/products/checkout.blade.php page or the 'POST' request for the HTML Form submission in the same page) (for submitting the user's Delivery Address and Payment Method))    
     public function checkout(Request $request)
     {
         try {
-            // Fetch countries
-            $countries = Country::where('status', 1)->get()->toArray();
-
-            // Get Cart Items
             $getCartItems = Cart::getCartItems();
 
-            if (count($getCartItems) == 0) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Shopping Cart is empty! Please add products to your Cart to checkout'
-                ]);
+            if ($getCartItems->isEmpty()) {
+                return redirect('cart')->with('error_message', 'Shopping Cart is empty! Please add products to your Cart to checkout');
             }
 
-            // Calculate totals
+            // 🔥 FIXED: Proper session handling for both logged in and guest users
+            $session_id = Session::get('session_id');
+            if (empty($session_id)) {
+                $session_id = Session::getId();
+                Session::put('session_id', $session_id);
+            }
+
+            // Calculate total price with proper cart logic
             $total_price = 0;
-            $total_weight = 0;
+            foreach ($getCartItems as &$item) {
+                if (!$item->product) {
+                    continue;
+                }
 
-            foreach ($getCartItems as $item) {
-                $attrPrice = Product::getDiscountAttributePrice($item['product_id'], $item['size']);
-                $total_price += ($attrPrice['final_price'] * $item['quantity']);
-                $product_weight = $item['product']['product_weight'] ?? 0;
-                $total_weight += $product_weight;
+                // Get product details
+                $product = Product::select('product_price', 'product_discount', 'category_id')
+                    ->find($item->product_id);
+
+                if (!$product) {
+                    continue;
+                }
+
+                $price = (float) $product->product_price;
+
+                // Category discount
+                $categoryDiscount = 0;
+                if (!empty($product->category_id)) {
+                    $cat = Category::select('category_discount')->find($product->category_id);
+                    $categoryDiscount = $cat->category_discount ?? 0;
+                }
+
+                // Calculate final price & discount
+                if ($product->product_discount > 0) {
+                    $final_price = $price - ($price * $product->product_discount / 100);
+                } elseif ($categoryDiscount > 0) {
+                    $final_price = $price - ($price * $categoryDiscount / 100);
+                } else {
+                    $final_price = $price;
+                }
+
+                $item_total = round($final_price * $item->quantity, 2);
+                $total_price += $item_total;
+
+                // Add calculated values to item
+                $item['unit_price'] = round($final_price, 2);
+                $item['total_price'] = $item_total;
             }
 
-            $deliveryAddresses = DeliveryAddress::deliveryAddresses();
-
-            foreach ($deliveryAddresses as $key => $value) {
-                $shippingCharges = ShippingCharge::getShippingCharges($total_weight, $value['country']);
-                $deliveryAddresses[$key]['shipping_charges'] = $shippingCharges;
-
-                $deliveryAddresses[$key]['codpincodeCount'] = DB::table('cod_pincodes')
-                    ->where('pincode', $value['pincode'])->count();
-
-                $deliveryAddresses[$key]['prepaidpincodeCount'] = DB::table('prepaid_pincodes')
-                    ->where('pincode', $value['pincode'])->count();
+            //  FIXED: Get delivery addresses for both logged in and guest users with proper session
+            if (Auth::check()) {
+                $deliveryAddresses = DeliveryAddress::where('user_id', Auth::user()->id)->get();
+            } else {
+                // For guest users, use session_id
+                $deliveryAddresses = DeliveryAddress::where('session_id', $session_id)->get();
             }
+
+            // Get dynamic shipping configuration
+            $shippingConfig = ShippingCharge::first();
+            $freeShippingThreshold = $shippingConfig ? $shippingConfig->free_shipping_min_amount : 500;
+            $standardShippingCharges = $shippingConfig ? $shippingConfig->shipping_charge : 50;
+
+            foreach ($deliveryAddresses as $address) {
+                $address->shipping_charges = $total_price >= $freeShippingThreshold ? 0 : $standardShippingCharges;
+                $address->is_free_shipping = $total_price >= $freeShippingThreshold;
+                $address->cart_total = $total_price;
+                $address->free_shipping_threshold = $freeShippingThreshold;
+                $address->codpincodeCount = 1;
+                $address->prepaidpincodeCount = 1;
+            }
+
+            // Log for debugging
+            Log::info('Checkout Data:', [
+                'user_logged_in' => Auth::check(),
+                'session_id' => $session_id,
+                'addresses_count' => $deliveryAddresses->count(),
+                'total_price' => $total_price,
+                'free_shipping_threshold' => $freeShippingThreshold
+            ]);
 
             if ($request->isMethod('post')) {
                 $data = $request->all();
 
-                // Validation
-                if (empty($data['address_id'])) {
-                    return response()->json(['status' => 'error', 'message' => 'Please select Delivery Address!']);
+                // Check if address is selected or provided
+                if (empty($data['address_id']) && empty($data['name'])) {
+                    return response()->json(['status' => 'error', 'message' => 'Please select or enter Delivery Address!']);
                 }
 
                 if (empty($data['payment_gateway'])) {
@@ -846,52 +1027,59 @@ class ProductsController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Please agree to T&C!']);
                 }
 
-                // Get delivery address
-                $deliveryAddress = DeliveryAddress::where('id', $data['address_id'])->first();
-                if (!$deliveryAddress) {
-                    return response()->json(['status' => 'error', 'message' => 'Selected delivery address not found!']);
-                }
-                $deliveryAddress = $deliveryAddress->toArray();
-
-                // Payment + Order Status
-                if ($data['payment_gateway'] == 'COD') {
-                    $payment_method = 'COD';
-                    $order_status = 'New';
+                // Save / get delivery address
+                if (!empty($data['address_id'])) {
+                    // Using existing address
+                    $deliveryAddress = DeliveryAddress::find($data['address_id']);
+                    if (!$deliveryAddress) {
+                        return response()->json(['status' => 'error', 'message' => 'Selected delivery address not found!']);
+                    }
                 } else {
-                    $payment_method = 'Prepaid';
-                    $order_status = 'Pending';
+                    // Creating new address inline
+                    $addressData = [
+                        'name' => $data['name'],
+                        'address' => $data['address'],
+                        'city' => $data['city'],
+                        'state' => $data['state'],
+                        'country' => 'Pakistan',
+                        'pincode' => $data['pincode'],
+                        'mobile' => $data['mobile']
+                    ];
+
+                    if (Auth::check()) {
+                        $addressData['user_id'] = Auth::id();
+                        $addressData['session_id'] = null;
+                    } else {
+                        $addressData['user_id'] = null;
+                        $addressData['session_id'] = $session_id;
+                    }
+
+                    $deliveryAddress = DeliveryAddress::create($addressData);
                 }
+
+                $payment_method = $data['payment_gateway'] == 'COD' ? 'COD' : 'Prepaid';
+                $order_status = $data['payment_gateway'] == 'COD' ? 'New' : 'Pending';
 
                 DB::beginTransaction();
 
                 try {
-                    // Recalculate total
-                    $total_price = 0;
-                    foreach ($getCartItems as $item) {
-                        $getDiscountAttributePrice = Product::getDiscountAttributePrice($item['product_id'], $item['size']);
-                        $total_price += ($getDiscountAttributePrice['final_price'] * $item['quantity']);
-                    }
-
-                    // Shipping charges
-                    $shipping_charges = ShippingCharge::getShippingCharges($total_weight, $deliveryAddress['country']);
-
-                    // Grand total
+                    // Calculate dynamic shipping charges
+                    $shipping_charges = $total_price >= $freeShippingThreshold ? 0 : $standardShippingCharges;
                     $couponAmount = Session::get('couponAmount', 0);
                     $grand_total = $total_price + $shipping_charges - $couponAmount;
 
-                    Session::put('grand_total', $grand_total);
-
-                    // Save Order
+                    // Create Order
                     $order = new Order;
-                    $order->user_id = Auth::user()->id;
-                    $order->name = $deliveryAddress['name'];
-                    $order->address = $deliveryAddress['address'];
-                    $order->city = $deliveryAddress['city'];
-                    $order->state = $deliveryAddress['state'];
-                    $order->country = $deliveryAddress['country'];
-                    $order->pincode = $deliveryAddress['pincode'];
-                    $order->mobile = $deliveryAddress['mobile'];
-                    $order->email = Auth::user()->email;
+                    $order->user_id = Auth::id(); // Will be null for guest users
+                    $order->session_id = !Auth::check() ? $session_id : null; // 🔥 FIXED: Use proper session_id
+                    $order->name = $deliveryAddress->name;
+                    $order->address = $deliveryAddress->address;
+                    $order->city = $deliveryAddress->city;
+                    $order->state = $deliveryAddress->state;
+                    $order->country = $deliveryAddress->country;
+                    $order->pincode = $deliveryAddress->pincode;
+                    $order->mobile = $deliveryAddress->mobile;
+                    $order->email = Auth::check() ? Auth::user()->email : ($data['email'] ?? 'guest@example.com');
                     $order->shipping_charges = $shipping_charges;
                     $order->coupon_code = Session::get('couponCode', '');
                     $order->coupon_amount = $couponAmount;
@@ -901,80 +1089,58 @@ class ProductsController extends Controller
                     $order->grand_total = $grand_total;
                     $order->save();
 
-                    $order_id = $order->id;
-
+                    Session::put('order_id', $order->id);
                     // Save Order Products
                     foreach ($getCartItems as $item) {
-                        $getProductStock = ProductsAttribute::getProductStock($item['product_id'], $item['size']);
-                        if ($item['quantity'] > $getProductStock) {
-                            throw new \Exception($item['product']['product_name'] . ' (' . $item['size'] . ') stock not enough.');
-                        }
+                        $attributes = $item->selected_attributes;
 
                         $cartItem = new OrdersProduct;
-                        $cartItem->order_id = $order_id;
-                        $cartItem->user_id = Auth::user()->id;
+                        $cartItem->order_id = $order->id;
+                        $cartItem->user_id = Auth::id();
+                        $cartItem->session_id = !Auth::check() ? $session_id : null;
 
-                        $getProductDetails = Product::select('product_code', 'product_name', 'product_color', 'admin_id', 'vendor_id')
-                            ->where('id', $item['product_id'])->first();
+                        $productDetails = Product::select('product_code', 'product_name', 'admin_id', 'vendor_id')
+                            ->find($item->product_id);
 
-                        if (!$getProductDetails) {
-                            throw new \Exception('Product not found.');
-                        }
+                        $cartItem->product_code = $productDetails->product_code;
+                        $cartItem->product_name = $productDetails->product_name;
+                        $cartItem->admin_id = $productDetails->admin_id;
+                        $cartItem->vendor_id = $productDetails->vendor_id;
 
-                        $getProductDetails = $getProductDetails->toArray();
-                        $cartItem->admin_id = $getProductDetails['admin_id'];
-                        $cartItem->vendor_id = $getProductDetails['vendor_id'];
+                        // if ($productDetails->vendor_id > 0) {
+                        //     $cartItem->commission = Vendor::getVendorCommission($productDetails->vendor_id);
+                        // }
 
-                        if ($getProductDetails['vendor_id'] > 0) {
-                            $vendorCommission = Vendor::getVendorCommission($getProductDetails['vendor_id']);
-                            $cartItem->commission = $vendorCommission;
-                        }
+                        $cartItem->product_id = $item->product_id;
+                        $cartItem->attributes = json_encode($attributes);
+                        $cartItem->product_price = $item['unit_price'];
+                        $cartItem->product_qty = $item->quantity;
 
-                        $cartItem->product_id = $item['product_id'];
-                        $cartItem->product_code = $getProductDetails['product_code'];
-                        $cartItem->product_name = $getProductDetails['product_name'];
-                        $cartItem->product_color = $getProductDetails['product_color'];
-                        $cartItem->product_size = $item['size'];
+                        // 🔹 Add default for item_status
+                        $cartItem->item_status = 'Pending'; // ya jo default chahiye
 
-                        $getDiscountAttributePrice = Product::getDiscountAttributePrice($item['product_id'], $item['size']);
-                        $cartItem->product_price = $getDiscountAttributePrice['final_price'];
-                        $cartItem->product_qty = $item['quantity'];
                         $cartItem->save();
-
-                        // Update stock
-                        $newStock = $getProductStock - $item['quantity'];
-                        ProductsAttribute::where([
-                            'product_id' => $item['product_id'],
-                            'size' => $item['size']
-                        ])->update(['stock' => $newStock]);
                     }
 
-                    Session::put('order_id', $order_id);
+
+
+
+
+                    if (Auth::check()) {
+                        Cart::where('user_id', Auth::id())->delete();
+                    } else {
+                        Cart::where('session_id', $session_id)->delete();
+                    }
+
+                    Session::forget(['couponCode', 'couponAmount']);
 
                     DB::commit();
 
-                    // JSON response for AJAX
-                    if ($data['payment_gateway'] == 'COD') {
-                        return response()->json([
-                            'status' => 'success',
-                            'redirect_url' => url('thanks')
-                        ]);
-                    } elseif ($data['payment_gateway'] == 'Paypal') {
-                        return response()->json([
-                            'status' => 'success',
-                            'redirect_url' => url('paypal')
-                        ]);
-                    } elseif ($data['payment_gateway'] == 'iyzipay') {
-                        return response()->json([
-                            'status' => 'success',
-                            'redirect_url' => url('iyzipay')
-                        ]);
-                    } else {
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Payment method not supported yet'
-                        ]);
-                    }
+                    return response()->json([
+                        'status' => 'success',
+                        'order_id' => $order->id,
+                        'redirect_url' => $data['payment_gateway'] == 'COD' ? url('thanks') : url(strtolower($data['payment_gateway']))
+                    ]);
                 } catch (\Exception $e) {
                     DB::rollBack();
                     return response()->json([
@@ -984,29 +1150,39 @@ class ProductsController extends Controller
                 }
             }
 
-            // Agar sirf checkout page kholna hai (GET request)
-            return view('front.products.checkout')
-                ->with(compact('deliveryAddresses', 'countries', 'getCartItems', 'total_price'));
+            return view('front.products.checkout', compact(
+                'deliveryAddresses',
+                'getCartItems',
+                'total_price'
+            ))->with([
+                'session_id' => $session_id,
+                'freeShippingThreshold' => $freeShippingThreshold,
+                'standardShippingCharges' => $standardShippingCharges
+            ]);
         } catch (\Exception $e) {
+            Log::error('Checkout Error: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'An error occurred during checkout. Please try again.'
+                'message' => $e->getMessage()
             ]);
         }
     }
-
     public function thanks()
     {
-        if (Session::has('order_id')) { // if there's an order has been placed, empty the Cart (remove the order (the cart items/products) from `carts`table)    // 'user_id' was stored in Session inside checkout() method in Front/ProductsController.php
-            // We empty the Cart after placing the order
-            Cart::where('user_id', Auth::user()->id)->delete(); // Retrieving The Authenticated User: https://laravel.com/docs/9.x/authentication#retrieving-the-authenticated-user
-
+        if (Session::has('order_id')) {
+            if (Auth::check()) {
+                Cart::where('user_id', Auth::id())->delete();
+            } else {
+                $session_id = Session::get('session_id');
+                Cart::where('session_id', $session_id)->delete();
+            }
 
             return view('front.products.thanks');
-        } else { // if there's no order has been placed
-            return redirect('cart'); // redirect user to cart.blade.php page
         }
+
+        return redirect('cart');
     }
+
 
 
 

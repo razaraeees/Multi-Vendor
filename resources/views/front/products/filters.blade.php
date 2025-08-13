@@ -74,8 +74,7 @@
                                 </div>
                                 <hr>
 
-                                {{-- Colors --}}
-                                @if (isset($colors) && $colors->count() > 0)
+                                @if (!empty($colors))
                                     <h6 class="p-1 fw-bold bg-light">Colors</h6>
                                     <div class="color-wrapper height-1 p-1">
                                         @foreach ($colors as $color)
@@ -96,22 +95,6 @@
                                     </div>
                                     <hr>
                                 @endif
-
-                                {{-- Discount --}}
-                                <h6 class="p-1 fw-bold bg-light">Discount Range</h6>
-                                <div class="discount-wrapper p-1">
-                                    @foreach ([10, 20, 30, 40, 50, 60, 70, 80] as $discount)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="discount"
-                                                value="{{ $discount }}"
-                                                {{ request('discount') == $discount ? 'checked' : '' }}>
-                                            <label class="form-check-label">
-                                                {{ $discount }}% and Above
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-
                                 {{-- Clear Filters Button --}}
                                 <div class="mt-3">
                                     <a href="{{ url()->current() }}" class="btn btn-outline-secondary w-100">Clear All

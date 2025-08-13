@@ -7,21 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 
-
 class Cart extends Model
 {
     use HasFactory;
 
-
+    protected $fillable = [
+        'session_id', 'user_id', 'product_id', 'selected_attributes', 'quantity'
+    ];
 
     // Relationship of a Cart Item `carts` table with a Product `products` table (every cart item belongs to a product)    
     public function product()
     { // A Product `products` belongs to a Vendor `vendors`, and the Foreign Key of the Relationship is the `product_id` column
         return $this->belongsTo('App\Models\Product', 'product_id'); // 'product_id' is the Foreign Key of the Relationship
     }
-
-
-    // App\Models\Cart.php
 
     public static function getCartItems()
     {
@@ -67,17 +65,38 @@ class Cart extends Model
             ->orderBy('id', 'Desc')
             ->get();
 
-        // 🔥 Filter: Sirf wahi items jinke product ho
         $items = $items->filter(function ($item) {
             return $item->product !== null;
         });
 
-        return $items; // Return filtered collection
+        return $items; 
     }
 
-    // JSON ko auto decode karega
+    // 🔥 Fixed: Handle both string and array formats safely
     public function getSelectedAttributesAttribute($value)
     {
-        return json_decode($value, true) ?? [];
+        // If it's already an array, return it
+        if (is_array($value)) {
+            return $value;
+        }
+        
+        // If it's a string, try to decode it
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        
+        // If it's null or anything else, return empty array
+        return [];
+    }
+
+    // 🔥 Added: Mutator to ensure consistent storage
+    public function setSelectedAttributesAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['selected_attributes'] = json_encode($value);
+        } else {
+            $this->attributes['selected_attributes'] = $value;
+        }
     }
 }

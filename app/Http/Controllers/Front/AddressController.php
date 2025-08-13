@@ -2,60 +2,84 @@
 
 namespace App\Http\Controllers\Front;
 
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 use App\Models\DeliveryAddress;
 use App\Models\Country;
-
+use App\Models\Cart;
+use App\Models\Product;
+use App\Models\ShippingCharge;
 
 class AddressController extends Controller
 {
-    // Checkout page Delivery Addresses Controller
 
-
-
-    // Edit Delivery Addresses via AJAX (Page refresh and fill in the <input> fields with the authenticated/logged in user Delivery Addresses from the `delivery_addresses` database table when clicking on the Edit button) in front/products/delivery_addresses.blade.php (which is 'include'-ed in front/products/checkout.blade.php) via AJAX, check front/js/custom.js    
-    public function getDeliveryAddress(Request $request) {
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-            // dd($data);
-
-
-            // Get the Delivery Address of the currently authenticated/logged-in user
-            $deliveryAddress = DeliveryAddress::where('id', $data['addressid'])->first()->toArray(); // Get all the delivery addresses of the currently authenticated/logged-in user    
-
-
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
-                'address' => $deliveryAddress
+    // MISSING METHOD - Add this method to your controller
+    public function getDeliveryAddress(Request $request)
+    {
+        try {
+            $addresses = [];
+            
+            // User logged in hai?
+            if (Auth::check()) {
+                $addresses = Auth::user()->addresses()->get();
+            } else {
+                // Session based addresses
+                $sessionId = session()->getId();
+                $addresses = DeliveryAddress::where('session_id', $sessionId)->get();
+            }
+            
+            return response()->json([
+                'type' => 'success',
+                'addresses' => $addresses->map(function($address) {
+                    return [
+                        'id' => $address->id,
+                        'name' => $address->name,
+                        'address' => $address->address,
+                        'city' => $address->city,
+                        'state' => $address->state,
+                        'country' => $address->country,
+                        'pincode' => $address->pincode,
+                        'mobile' => $address->mobile,
+                        'shipping_charges' => $address->shipping_charges ?? 0,
+                        'codpincodeCount' => $address->cod_available ?? 1,
+                        'prepaidpincodeCount' => $address->prepaid_available ?? 1,
+                        'is_free_shipping' => $address->is_free_shipping ?? false
+                    ];
+                })
             ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'type' => 'error',
+                'message' => 'Failed to load addresses: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    // Save Delivery Addresses via AJAX (save the delivery addresses of the authenticated/logged-in user in `delivery_addresses` database table when submitting the HTML Form) in front/products/delivery_addresses.blade.php (which is 'include'-ed in front/products/checkout.blade.php) via AJAX, check front/js/custom.js    
-    public function saveDeliveryAddress(Request $request) {
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            // Validation    
-            // Manually Creating Validators: https://laravel.com/docs/9.x/validation#manually-creating-validators
+    public function saveDeliveryAddress(Request $request)
+    {
+        if ($request->ajax()) {
             $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-                'delivery_name'    => 'required|string|max:100',   // string: https://laravel.com/docs/9.x/validation#rule-string    // max:value: https://laravel.com/docs/9.x/validation#rule-max
-                'delivery_address' => 'required|string|max:100',   // string: https://laravel.com/docs/9.x/validation#rule-string    // max:value: https://laravel.com/docs/9.x/validation#rule-max
-                'delivery_city'    => 'required|string|max:100',   // string: https://laravel.com/docs/9.x/validation#rule-string    // max:value: https://laravel.com/docs/9.x/validation#rule-max
-                'delivery_state'   => 'required|string|max:100',   // string: https://laravel.com/docs/9.x/validation#rule-string    // max:value: https://laravel.com/docs/9.x/validation#rule-max
-                'delivery_country' => 'required|string|max:100',   // string: https://laravel.com/docs/9.x/validation#rule-string    // max:value: https://laravel.com/docs/9.x/validation#rule-max
-                'delivery_pincode' => 'required|digits:6',         // digits:value: https://laravel.com/docs/9.x/validation#rule-digits
-                'delivery_mobile'  => 'required|numeric|digits:10' // digits:value: https://laravel.com/docs/9.x/validation#rule-digits
+                'delivery_name'    => 'required|string|max:100',
+                'delivery_address' => 'required|string|max:100',
+                'delivery_city'    => 'required|string|max:100',
+                'delivery_state'   => 'required|string|max:100',
+                'delivery_country' => 'required|string|max:100',
+                'delivery_pincode' => 'required',
+                'delivery_mobile'  => 'required|numeric'
             ]);
 
-            if ($validator->passes()) { // if the user passes validation, add a new (INSERT) or edit (UPDATE) the delivery address
-                $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-                // dd($data);
-    
-    
-                $address = array();
-                // We add the `delivery_addresses` table column names to the array in order to be able to UPDATE (Edit) or INSERT INTO (Add) the `delivery_addresses` table using the $address variable:
-                $address['user_id'] = Auth::user()->id; // Retrieving The Authenticated User: https://laravel.com/docs/9.x/authentication#retrieving-the-authenticated-user
+            if ($validator->passes()) {
+                
+                $data = $request->all();
+
+                $address = [];
+                $address['user_id'] = Auth::check() ? Auth::user()->id : null;
+                $address['session_id'] = !Auth::check() ? Session::getId() : null;
                 $address['name']    = $data['delivery_name'];
                 $address['address'] = $data['delivery_address'];
                 $address['city']    = $data['delivery_city'];
@@ -63,67 +87,244 @@ class AddressController extends Controller
                 $address['country'] = $data['delivery_country'];
                 $address['pincode'] = $data['delivery_pincode'];
                 $address['mobile']  = $data['delivery_mobile'];
-    
-    
-                // EDIT delivery address (UPDATE the `delivery_addresses` database table)
-                if (!empty($data['delivery_id'])) { // if there's a delivery address id submitted from the HTML Form via AJAX, this means it's Edit Delivery Address (not Add a new delivery address) i.e.  (UPDATE the `delivery_addresses` database table)    // $data['delivery_id'] comes from the 'data' object inside the $.ajax() method. Check front/js/custom.js
-                    // UPDATE the `delivery_addresses` database table
-                    DeliveryAddress::where('id', $data['delivery_id'])->update($address); // $data['delivery_id'] comes from the 'data' object inside the $.ajax() method. Check front/js/custom.js
-    
-                // ADD a new delivery address (INSERT INTO the `delivery_addresses` database table)
-                } else { // if there's no delivery address id submitted from the HTML Form via AJAX, this means it's Add a new Delivery Address (not Edit delivery address) i.e. (INSERT INTO the `delivery_addresses` database table)    // $data['delivery_id'] comes from the 'data' object inside the $.ajax() method. Check front/js/custom.js                        
-                    // INSERT INTO the `delivery_addresses` database table
-                    DeliveryAddress::create($address); // Check the DeliveryAddress.php model for Mass Assignment: https://laravel.com/docs/10.x/eloquent#mass-assignment    // Check 5:56 in 
+
+                try {
+                    if (!empty($data['delivery_id'])) {
+                        // Update existing address
+                        DeliveryAddress::where('id', $data['delivery_id'])->update($address);
+                        $message = 'Address updated successfully!';
+                    } else {
+                        // Create new address
+                        DeliveryAddress::create($address);
+                        $message = 'Address added successfully!';
+                    }
+
+                    // Get cart total for shipping calculation
+                    $cartTotal = $this->getCartTotal();
+
+                    // Get updated addresses list with conditional shipping charges
+                    $deliveryAddresses = Auth::check()
+                        ? DeliveryAddress::where('user_id', Auth::user()->id)->get()
+                        : DeliveryAddress::where('session_id', Session::getId())->get();
+
+                    // Get dynamic shipping configuration
+                    $shippingConfig = $this->getShippingConfiguration();
+
+                    // Add conditional shipping charges to each address
+                    foreach ($deliveryAddresses as $address) {
+                        $address->shipping_charges = $this->calculateConditionalShipping($cartTotal, $address->pincode);
+                        $address->codpincodeCount = $this->checkCODAvailability($address->pincode);
+                        $address->prepaidpincodeCount = $this->checkPrepaidAvailability($address->pincode);
+                        $address->is_free_shipping = $cartTotal >= $shippingConfig['free_shipping_min_amount'];
+                        $address->cart_total = $cartTotal;
+                        $address->free_shipping_threshold = $shippingConfig['free_shipping_min_amount'];
+                    }
+
+                    return response()->json([
+                        'type' => 'success',
+                        'message' => $message,
+                        'addresses' => $deliveryAddresses->toArray(), // Add this line
+                        'cart_total' => $cartTotal,
+                        'free_shipping_threshold' => $shippingConfig['free_shipping_min_amount'],
+                        'view' => (string) \Illuminate\Support\Facades\View::make('front.products.checkout_delivery')
+                            ->with(compact('deliveryAddresses'))
+                    ]);
+
+                } catch (\Exception $e) {
+                    Log::error('Error saving delivery address: ' . $e->getMessage());
+                    return response()->json([
+                        'type' => 'error',
+                        'message' => 'Error saving address. Please try again.'
+                    ]);
                 }
-    
-    
-                // Note: You must pass in to view the SAME variables ($deliveryAddresses and $countries) that were passed in to it in checkout() method in Front/ProductsController.php
-                $deliveryAddresses = DeliveryAddress::deliveryAddresses(); // Get all the delivery addresses of the currently authenticated/logged-in user    
 
-                // Fetch all of the world countries from the database table `countries`
-                $countries = Country::where('status', 1)->get()->toArray(); // get the countries which have status = 1 (to ignore the blacklisted countries, in case)
-                // dd($countries);
-    
-    
-                return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
-                    // Note: You must pass in to view the SAME variables ($deliveryAddresses and $countries) that were passed in to it in checkout() method in Front/ProductsController.php
-                    'view' => (string) \Illuminate\Support\Facades\View::make('front.products.delivery_addresses')->with(compact('deliveryAddresses', 'countries')) // View Responses: https://laravel.com/docs/9.x/responses#view-responses    // Creating & Rendering Views: https://laravel.com/docs/9.x/views#creating-and-rendering-views    // Passing Data To Views: https://laravel.com/docs/9.x/views#passing-data-to-views
-                ]);
-
-            } else { // if the user fails validation, return an error message
-                // Working With Error Messages: https://laravel.com/docs/9.x/validation#working-with-error-messages    
-                // dd($validator->messages());
-                return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
-                    'type'   => 'error',
-                    'errors' => $validator->messages() // we'll loop over the Validation Errors Messages array using jQuery to show them in the frontend (Check    $(document).on('submit', '#addressAddEditForm')    in front/js/custom.js)    // Working With Error Messages: https://laravel.com/docs/9.x/validation#working-with-error-messages    
+            } else {
+                return response()->json([
+                    'type' => 'error',
+                    'errors' => $validator->messages()
                 ]);
             }
         }
     }
 
-    // Remove Delivery Addresse via AJAX (Page refresh and fill in the <input> fields with the authenticated/logged-in user Delivery Addresses details from the `delivery_addresses` database table when clicking on the Remove button) in front/products/delivery_addresses.blade.php (which is 'include'-ed in front/products/checkout.blade.php) via AJAX, check front/js/custom.js    
-    public function removeDeliveryAddress(Request $request) {
-        if ($request->ajax()) { // if the request is coming via an AJAX call
-            $data = $request->all(); // Getting the name/value pairs array that are sent from the AJAX request (AJAX call)
-            // dd($data);
+    // Get current cart total
+    private function getCartTotal()
+    {
+        $total = 0;
+        
+        if (Auth::check()) {
+            // For logged in users
+            $userCartItems = Cart::userCartItems();
+        } else {
+            // For guest users (session-based cart)
+            $userCartItems = Cart::where('session_id', Session::getId())->get();
+        }
 
+        foreach ($userCartItems as $item) {
+            $getDiscountAttributePrice = Product::getDiscountAttributePrice($item['product_id'], $item['size']);
+            $total += ($getDiscountAttributePrice['final_price'] * $item['quantity']);
+        }
 
-            // DELETE the delivery address from the `delivery_addresses` database table
-            DeliveryAddress::where('id', $data['addressid'])->delete(); // $data['addressid'] comes from the 'data' object inside the $.ajax() method. Check front/js/custom.js
-            // exit;
+        // Subtract any applied coupon
+        $couponAmount = Session::get('couponAmount', 0);
+        $total = $total - $couponAmount;
 
+        return $total;
+    }
 
-            // Note: You must pass in to view the SAME variables ($deliveryAddresses and $countries) that were passed in to it in checkout() method in Front/ProductsController.php
-            $deliveryAddresses = DeliveryAddress::deliveryAddresses(); // Get all the delivery addresses of the currently authenticated/logged-in user   
+    // Get dynamic shipping configuration from database
+    private function getShippingConfiguration()
+    {
+        $shippingConfig = ShippingCharge::first();
+        
+        if ($shippingConfig) {
+            return [
+                'shipping_charge' => $shippingConfig->shipping_charge,
+                'free_shipping_min_amount' => $shippingConfig->free_shipping_min_amount
+            ];
+        }
+        
+        // Default fallback values if no configuration found
+        return [
+            'shipping_charge' => 50,
+            'free_shipping_min_amount' => 500
+        ];
+    }
 
-            // Fetch all of the world countries from the database table `countries`
-            $countries = Country::where('status', 1)->get()->toArray(); // get the countries which have status = 1 (to ignore the blacklisted countries, in case)
-            // dd($countries);
+    // Calculate conditional shipping charges
+    private function calculateConditionalShipping($cartTotal, $pincode = null)
+    {
+        $shippingConfig = $this->getShippingConfiguration();
+        
+        // Free shipping if cart total is above threshold
+        if ($cartTotal >= $shippingConfig['free_shipping_min_amount']) {
+            return 0;
+        }
 
+        // You can add pincode-based logic here if needed
+        return $shippingConfig['shipping_charge'];
+    }
 
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
-                // Note: You must pass in to view the SAME variables ($deliveryAddresses and $countries) that were passed in to it in checkout() method in Front/ProductsController.php
-                'view' => (string) \Illuminate\Support\Facades\View::make('front.products.delivery_addresses')->with(compact('deliveryAddresses', 'countries')) // View Responses: https://laravel.com/docs/9.x/responses#view-responses    // Creating & Rendering Views: https://laravel.com/docs/9.x/views#creating-and-rendering-views    // Passing Data To Views: https://laravel.com/docs/9.x/views#passing-data-to-views
+    // Check COD availability
+    private function checkCODAvailability($pincode)
+    {
+        return 1; // Available
+    }
+
+    // Check prepaid availability
+    private function checkPrepaidAvailability($pincode)
+    {
+        return 1; // Available
+    }
+
+    // Get delivery address with shipping calculation (for checkout page)
+    public function getDeliveryAddressWithShipping(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = $request->all();
+            
+            $deliveryAddress = DeliveryAddress::where('id', $data['addressid'])->first();
+            
+            if ($deliveryAddress) {
+                $cartTotal = $this->getCartTotal();
+                $shippingCharges = $this->calculateConditionalShipping($cartTotal);
+                $shippingConfig = $this->getShippingConfiguration();
+                
+                $deliveryAddress->shipping_charges = $shippingCharges;
+                $deliveryAddress->cart_total = $cartTotal;
+                $deliveryAddress->is_free_shipping = $cartTotal >= $shippingConfig['free_shipping_min_amount'];
+                
+                return response()->json([
+                    'address' => $deliveryAddress->toArray(),
+                    'shipping_info' => [
+                        'cart_total' => $cartTotal,
+                        'shipping_charges' => $shippingCharges,
+                        'free_shipping_threshold' => $shippingConfig['free_shipping_min_amount'],
+                        'is_free_shipping' => $cartTotal >= $shippingConfig['free_shipping_min_amount'],
+                        'amount_needed_for_free_shipping' => max(0, $shippingConfig['free_shipping_min_amount'] - $cartTotal)
+                    ]
+                ]);
+            }
+
+            return response()->json(['error' => 'Address not found'], 404);
+        }
+    }
+
+    // Remove Delivery Address (updated with shipping recalculation)
+    public function removeDeliveryAddress(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = $request->all();
+
+            try {
+                // DELETE the delivery address
+                DeliveryAddress::where('id', $data['addressid'])->delete();
+
+                // Get cart total for shipping calculation
+                $cartTotal = $this->getCartTotal();
+
+                // Get updated addresses list
+                $deliveryAddresses = Auth::check()
+                    ? DeliveryAddress::where('user_id', Auth::user()->id)->get()
+                    : DeliveryAddress::where('session_id', Session::getId())->get();
+
+                // Get dynamic shipping configuration
+                $shippingConfig = $this->getShippingConfiguration();
+
+                // Add conditional shipping charges to each address
+                foreach ($deliveryAddresses as $address) {
+                    $address->shipping_charges = $this->calculateConditionalShipping($cartTotal, $address->pincode);
+                    $address->codpincodeCount = $this->checkCODAvailability($address->pincode);
+                    $address->prepaidpincodeCount = $this->checkPrepaidAvailability($address->pincode);
+                    $address->is_free_shipping = $cartTotal >= $shippingConfig['free_shipping_min_amount'];
+                    $address->cart_total = $cartTotal;
+                    $address->free_shipping_threshold = $shippingConfig['free_shipping_min_amount'];
+                }
+
+                return response()->json([
+                    'type' => 'success',
+                    'message' => 'Address removed successfully!',
+                    'addresses' => $deliveryAddresses->toArray(), // Add this line
+                    'cart_total' => $cartTotal,
+                    'view' => (string) \Illuminate\Support\Facades\View::make('front.products.checkout_delivery')
+                        ->with(compact('deliveryAddresses'))
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Error removing delivery address: ' . $e->getMessage());
+                return response()->json([
+                    'type' => 'error',
+                    'message' => 'Error removing address. Please try again.'
+                ]);
+            }
+        }
+    }
+
+    // Get shipping info for AJAX calls
+    public function getShippingInfo(Request $request)
+    {
+        try {
+            $cartTotal = $this->getCartTotal();
+            $shippingCharges = $this->calculateConditionalShipping($cartTotal);
+            $shippingConfig = $this->getShippingConfiguration();
+            
+            return response()->json([
+                'cart_total' => $cartTotal,
+                'shipping_charges' => $shippingCharges,
+                'free_shipping_threshold' => $shippingConfig['free_shipping_min_amount'],
+                'is_free_shipping' => $cartTotal >= $shippingConfig['free_shipping_min_amount'],
+                'amount_needed_for_free_shipping' => max(0, $shippingConfig['free_shipping_min_amount'] - $cartTotal),
+                'savings_message' => $cartTotal >= $shippingConfig['free_shipping_min_amount'] 
+                    ? 'You are getting FREE shipping!' 
+                    : 'Add $' . ($shippingConfig['free_shipping_min_amount'] - $cartTotal) . ' more for FREE shipping!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting shipping info: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error getting shipping info',
+                'cart_total' => 0,
+                'shipping_charges' => 0
             ]);
         }
     }

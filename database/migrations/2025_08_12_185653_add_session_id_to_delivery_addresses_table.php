@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('prepaid_pincodes', function (Blueprint $table) {
-            
-            $table->id();
-
-            $table->string('pincode', 10);
-
-            $table->timestamps();
+        Schema::table('delivery_addresses', function (Blueprint $table) {
+             $table->string('session_id')->nullable()->after('user_id');
         });
     }
 
@@ -26,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('prepaid_pincodes');
+        Schema::table('delivery_addresses', function (Blueprint $table) {
+              $table->dropColumn('session_id');
+        });
     }
 };

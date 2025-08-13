@@ -13,14 +13,12 @@ class ShippingController extends Controller
     // We got two Shipping Charges modules: Simple one (every country has its own shipping rate (price/cost/charges) based on the Delivery Address in the Checkout page) and Advanced one (every country has its own shipping rate based on the Delivery Address in the Checkout page, plus, other charges are calculated based on shipment weight). We created the `shipping_charges` database table for that matter. Also, the Shipping Charge module will be available in the Admin Panel for 'admin'-s only, not for 'vendor'-s
     
 
-
     // Render the Shipping Charges page (admin/shipping/shipping_charges.blade.php) in the Admin Panel for 'admin'-s only, not for vendors    
     public function shippingCharges() {
         // Highlight the 'Shipping Charges' module in the Sidebar on the left in the Admin Panel. Correcting issues in the Skydash Admin Panel Sidebar using Session
         Session::put('page', 'shipping');
 
         $shippingCharges = ShippingCharge::get()->toArray();
-
 
         return view('admin.shipping.shipping_charges')->with(compact('shippingCharges'));
     }
@@ -37,44 +35,85 @@ class ShippingController extends Controller
                 $status = 1;
             }
 
+            ShippingCharge::where('id', $data['shipping_id'])->update(['status' => $status]); 
 
-            ShippingCharge::where('id', $data['shipping_id'])->update(['status' => $status]); // $data['shipping_id'] comes from the 'data' object inside the $.ajax() method
-            // echo '<pre>', var_dump($data), '</pre>';
-
-            return response()->json([ // JSON Responses: https://laravel.com/docs/9.x/responses#json-responses
+            return response()->json([ 
                 'status'      => $status,
                 'shipping_id' => $data['shipping_id']
             ]);
         }
     }
 
-    // Render admin/shipping/edit_shipping_charges.blade.php page in case of HTTP 'GET' request ('Edit/Update Shipping Charges'), or hadle the HTML Form submission in the same page in case of HTTP 'POST' request    
-    public function editShippingCharges($id, Request $request) { // Route Parameters: Required Parameters: https://laravel.com/docs/9.x/routing#required-parameters
-        // Highlight the 'Shipping Charges' module in the Sidebar on the left in the Admin Panel. Correcting issues in the Skydash Admin Panel Sidebar using Session
+    // Add/Create Shipping Charges Method
+    public function addShippingCharges(Request $request) {
         Session::put('page', 'shipping');
 
-        if ($request->isMethod('post')) { // if the HTML Form in edit_shipping_charges.blade.php is submitted (WHETHER Add or Update!)
+        if ($request->isMethod('post')) {
             $data = $request->all();
             // dd($data);
 
+            // Check if any record already exists
+            $existingRecord = ShippingCharge::first();
+            
+            if ($existingRecord) {
+                // If record exists, update it instead of creating new
+                $existingRecord->update([
+                    'shipping_charge' => $data['shipping_charge'],
+                    'free_shipping_min_amount' => $data['free_shipping_min_amount'],
+                ]);
+                $message = 'Shipping Charges updated successfully!';
+            } else {
+                // Create new record only if no record exists
+                ShippingCharge::create([
+                    'shipping_charge' => $data['shipping_charge'],
+                    'free_shipping_min_amount' => $data['free_shipping_min_amount'],
+                ]);
+                $message = 'Shipping Charges added successfully!';
+            }
+
+            return redirect('admin/shipping-charges')->with('success_message', $message);
+        }
+
+        // Check if record already exists
+        $existingRecord = ShippingCharge::first();
+        
+        if ($existingRecord) {
+            // If record exists, redirect to edit page
+            return redirect('admin/edit-shipping-charges/' . $existingRecord->id);
+        }
+
+        // Empty details for new record
+        $shippingDetails = [
+            'id' => '',
+            'shipping_charge' => '',
+            'free_shipping_min_amount' => ''
+        ];
+        $title = 'Add Shipping Charges';
+
+        return view('admin.shipping.edit_shipping_charges')->with(compact('shippingDetails', 'title'));
+    }
+
+    // Edit/Update Shipping Charges Method
+    public function editShippingCharges($id, Request $request) { 
+        Session::put('page', 'shipping');
+
+        if ($request->isMethod('post')) { 
+            $data = $request->all();
+            // dd($data);
+
+            // Simple update for existing record
             ShippingCharge::where('id', $id)->update([
-                '0_500g'      => $data['0_500g'],
-                '501g_1000g'  => $data['501g_1000g'],
-                '1001_2000g'  => $data['1001_2000g'],
-                '2001g_5000g' => $data['2001g_5000g'],
-                'above_5000g' => $data['above_5000g'],
+                'shipping_charge' => $data['shipping_charge'],
+                'free_shipping_min_amount' => $data['free_shipping_min_amount'],
             ]);
+
             $message = 'Shipping Charges updated successfully!';
-
-
-            return redirect()->back()->with('success_message', $message);
+            return redirect('admin/shipping-charges')->with('success_message', $message);
         }
 
         $shippingDetails = ShippingCharge::where('id', $id)->first();
         $title = 'Edit Shipping Charges';
 
-
         return view('admin.shipping.edit_shipping_charges')->with(compact('shippingDetails', 'title'));
     }
-
 }

@@ -4,7 +4,6 @@
 <?php
 // Getting the 'enabled' sections ONLY and their child categories (using the 'categories' relationship method) which, in turn, include their 'subcategories`
 $categorys = \App\Models\Category::categories();
-// dd($sections);
 ?>
 
 @section('sidebar')
@@ -62,22 +61,31 @@ $categorys = \App\Models\Category::categories();
                                 <div class="card rounded-0">
                                     <div class="card-body p-0">
                                         @if (!empty($main->category_image))
-                                            <img src="{{ asset('front/images/category_images/' . $main->category_image) }}"
-                                                alt="{{ $main->category_name }}" class="img-fluid rounded"
-                                                style="width: 100%; max-width: 200px; height: 200px; object-fit: cover;">
+                                            <a href="{{ url($main->url) }}">
+                                                <img src="{{ asset('front/images/category_images/' . $main->category_image) }}"
+                                                    alt="{{ $main->category_name }}" class="img-fluid rounded"
+                                                    style="width: 100%; max-width: 200px; height: 200px; object-fit: cover;">
+                                            </a>
                                         @else
-                                            <div class="bg-light d-flex align-items-center justify-content-center rounded"
-                                                style="width: 100%; max-width: 200px; height: 200px;">
-                                                <i class="fas fa-image text-muted fa-2x"></i>
-                                            </div>
+                                            <a href="{{ url($main->url) }}">
+                                                <div class="bg-light d-flex align-items-center justify-content-center rounded"
+                                                    style="width: 100%; max-width: 200px; height: 200px;">
+                                                    <i class="fas fa-image text-muted fa-2x"></i>
+                                                </div>
+                                            </a>
                                         @endif
                                     </div>
                                     <div class="card-footer text-center bg-transparent">
-                                        <h6 class="mb-0 text-uppercase fw-bold">{{ $main->category_name }}</h6>
+                                        <h6 class="mb-0 text-uppercase fw-bold">
+                                            <a href="{{ url($main->url) }}" class="text-decoration-none text-dark">
+                                                {{ $main->category_name }}
+                                            </a>
+                                        </h6>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
+
                     </div>
                 </div>
             </div>

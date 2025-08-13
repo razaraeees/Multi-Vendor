@@ -1,8 +1,13 @@
 <?php
+
 /**
  * FIXED IndexController - Updated to match detail page logic
  */
+
 namespace App\Http\Controllers\Front;
+
+use Illuminate\Http\Request;
+
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -19,7 +24,7 @@ class IndexController extends Controller
                 ->where('status', 1)
                 ->get()
                 ->toArray();
-                
+
             $fixBanners = Banner::where('type', 'Fix')
                 ->where('status', 1)
                 ->get()
@@ -69,7 +74,7 @@ class IndexController extends Controller
                 ->toArray();
             $featuredProducts = Product::with([
                 'images' => function ($query) {
-                    $query->where('status', 1)->orderBy('id', 'asc'); 
+                    $query->where('status', 1)->orderBy('id', 'asc');
                 },
                 'category'
             ])
@@ -77,7 +82,7 @@ class IndexController extends Controller
                     'is_featured' => 'Yes',
                     'status' => 1
                 ])
-                ->limit(12) 
+                ->limit(12)
                 ->get()
                 ->toArray();
 
@@ -117,21 +122,20 @@ class IndexController extends Controller
             }
 
             return view('front.index')->with(compact(
-                'sliderBanners', 
-                'fixBanners', 
-                'newProducts', 
-                'bestSellers', 
-                'discountedProducts', 
-                'featuredProducts', 
-                'meta_title', 
-                'meta_description', 
-                'meta_keywords', 
+                'sliderBanners',
+                'fixBanners',
+                'newProducts',
+                'bestSellers',
+                'discountedProducts',
+                'featuredProducts',
+                'meta_title',
+                'meta_description',
+                'meta_keywords',
                 'categories'
             ));
-
         } catch (\Exception $e) {
             Log::error('Homepage Error: ' . $e->getMessage());
-            
+
             // Return with empty arrays to prevent page crash
             return view('front.index')->with([
                 'sliderBanners' => [],
@@ -146,6 +150,36 @@ class IndexController extends Controller
                 'categories' => collect([])
             ]);
         }
+    } //End Method
+
+    public function homeSearch(Request $request)
+    {
+        try {
+            $query = trim($request->q);
+
+            // Agar query empty ho to back bhej do with message
+            if (empty($query)) {
+                return redirect()->back()->with('error', 'Please enter a search term.');
+            }
+
+            // Products ke saath relations load
+            $categoryProducts = Product::with(['images', 'brand', 'ratings'])
+                ->where('product_name', 'LIKE', "%{$query}%")
+                ->paginate(20);
+
+            // Agar results empty hain
+            if ($categoryProducts->isEmpty()) {
+                return view('front.products.search', [
+                    'categoryProducts' => $categoryProducts,
+                    'query' => $query,
+                    'message' => 'No products found matching your search.'
+                ]);
+            }
+
+            return view('front.products.search', compact('categoryProducts', 'query'));
+        } catch (\Exception $e) {
+            Log::error('Search error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Something went wrong while searching. Please try again later.');
+        }
     }
 }
-

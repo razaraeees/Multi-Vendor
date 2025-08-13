@@ -43,10 +43,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Cart page loaded - Event delegation active');
-
-        // 🔥 EVENT DELEGATION - Works even after AJAX updates
         document.addEventListener('click', function(e) {
-            // Check if clicked element is delete button
             if (e.target.classList.contains('deleteCartItem') || e.target.closest('.deleteCartItem')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -61,8 +58,6 @@
                 }
 
                 console.log('Deleting cart item:', cartid);
-
-                // Disable button and show loading
                 button.disabled = true;
                 let originalHTML = button.innerHTML;
                 button.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Removing...';

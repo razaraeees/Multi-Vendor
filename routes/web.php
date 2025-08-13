@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -124,6 +126,7 @@ Route::prefix('/admin')->group(function () {
         // Shipping
         Route::get('shipping-charges', [ShippingController::class, 'shippingCharges']);
         Route::post('update-shipping-status', [ShippingController::class, 'updateShippingStatus']);
+        Route::match(['get', 'post'], 'add-shipping-charges', [ShippingController::class, 'addShippingCharges']);
         Route::match(['get', 'post'], 'edit-shipping-charges/{id}', [ShippingController::class, 'editShippingCharges']);
 
         // Subscribers
@@ -171,14 +174,16 @@ Route::prefix('/')->name('front.')->group(function () {
     Route::post('cart/add', [FrontProductsController::class, 'cartAdd']);
     Route::get('cart', [FrontProductsController::class, 'cart'])->name('cart');
     Route::post('cart/update', [FrontProductsController::class, 'cartUpdate']);
+    // Add this route in your web.php
+    Route::post('/cart/update-quantity', [FrontProductsController::class, 'updateQuantity']);
     // routes/web.php
     Route::post('/cart/delete', [FrontProductsController::class, 'cartDelete']);
 
 
-     Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::get('/wishlist', [WishlistController::class, 'index']);
 
-        Route::post('/wishlist/add', [WishlistController::class, 'addWishlist'])->name('wishlist.add');
-        Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist'])->name('wishlist.remove');
+    Route::post('/wishlist/add', [WishlistController::class, 'addWishlist'])->name('wishlist.add');
+    Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist'])->name('wishlist.remove');
 
     // User Auth
     Route::get('user/login-register', [FrontUserController::class, 'loginRegister'])->name('login');
@@ -201,27 +206,75 @@ Route::prefix('/')->name('front.')->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::match(['get', 'post'], 'user/account', [FrontUserController::class, 'userAccount']);
         Route::post('user/update-password', [FrontUserController::class, 'userUpdatePassword']);
-        Route::post('apply-coupon', [FrontProductsController::class, 'applyCoupon']);
-        Route::match(['get', 'post'], 'checkout', [FrontProductsController::class, 'checkout']);
-        Route::get('thanks', [FrontProductsController::class, 'thanks']);
-        Route::get('user/orders/{id?}', [FrontOrderController::class, 'orders']);
-
-        // Address
-
-        
-
-        Route::post('get-delivery-address', [AddressController::class, 'getDeliveryAddress']);
-        Route::post('save-delivery-address', [AddressController::class, 'saveDeliveryAddress']);
-        Route::post('remove-delivery-address', [AddressController::class, 'removeDeliveryAddress']);
-
-        // Paypal
-        Route::get('paypal', [PaypalController::class, 'paypal']);
-        Route::post('pay', [PaypalController::class, 'pay'])->name('payment');
-        Route::get('success', [PaypalController::class, 'success']);
-        Route::get('error', [PaypalController::class, 'error']);
-
-        // Iyzico
-        Route::get('iyzipay', [IyzipayController::class, 'iyzipay']);
-        Route::get('iyzipay/pay', [IyzipayController::class, 'pay']);
     });
+
+
+    Route::post('apply-coupon', [FrontProductsController::class, 'applyCoupon']);
+    Route::match(['get', 'post'], 'checkout', [FrontProductsController::class, 'checkout']);
+    Route::get('thanks', [FrontProductsController::class, 'thanks']);
+    Route::get('user/orders/{id?}', [FrontOrderController::class, 'orders']);
+
+
+    Route::post('/get-delivery-address', [AddressController::class, 'getDeliveryAddress']);
+    Route::post('save-delivery-address', [AddressController::class, 'saveDeliveryAddress']);
+    Route::post('remove-delivery-address', [AddressController::class, 'removeDeliveryAddress']);
+
+    // Additional routes for better functionality
+    Route::get('get-shipping-info', [AddressController::class, 'getShippingInfo']);
+    Route::post('get-shipping-info', [AddressController::class, 'getShippingInfo']);
+    Route::post('get-delivery-address-with-shipping', [AddressController::class, 'getDeliveryAddressWithShipping']);
+
+    Route::get('paypal', [PaypalController::class, 'paypal']);
+    Route::post('pay', [PaypalController::class, 'pay'])->name('payment');
+    Route::get('success', [PaypalController::class, 'success']);
+    Route::get('error', [PaypalController::class, 'error']);
+
+    // Iyzico
+    Route::get('iyzipay', [IyzipayController::class, 'iyzipay']);
+    Route::get('iyzipay/pay', [IyzipayController::class, 'pay']);
+
+
+    // Route::get('/ajax-search-products', function( $request) {
+    //     $query = $request->input('q');
+
+    //     if (!$query) {
+    //         return response()->json([]);
+    //     }
+
+    //     $products = Product::where('product_name', 'LIKE', "%{$query}%")
+    //         ->with(['images' => function($q) {
+    //             $q->orderBy('id', 'asc')->limit(1);
+    //         }])
+    //         ->limit(10)
+    //         ->get(['id', 'product_name', 'product_price as price', 'description']);
+
+    //     $products->transform(function ($product) {
+    //         $product->image = $product->images->first()
+    //             ? asset('front/images/product_images/small/' . $product->images->first()->image)
+    //             : asset('front/images/no-image.png');
+    //         unset($product->images);
+    //         return $product;
+    //     });
+
+    //     return response()->json($products);
+    // });
+
+    // Suggestions ke liye AJAX
+    Route::get('/ajax-search-products', function () {
+        $query = request('q');
+
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $products = Product::select('id', 'product_name')
+            ->where('product_name', 'LIKE', "%{$query}%")
+            ->limit(10)
+            ->get();
+
+        return response()->json($products);
+    });
+
+    // Search results page
+    Route::get('/search', [IndexController::class, 'homeSearch']);
 });

@@ -20,7 +20,7 @@
             text-align: center;
             max-width: 700px;
             width: 100%;
-            border-top: 6px solid #ffc107; /* theme yellow */
+            border-top: 6px solid red; /* theme yellow */
             animation: fadeInUp 1s ease-in-out;
         }
         .thank-icon {
@@ -37,8 +37,8 @@
             color: #555;
         }
         .btn-custom {
-            background-color: #ffc107; /* theme yellow */
-            color: #000;
+            background-color: red; /* theme yellow */
+            color: #fff;
             font-weight: 600;
             border-radius: 30px;
             padding: 12px 30px;
@@ -69,7 +69,7 @@
         
         @if(session('order_id'))
             <p class="mt-3 fs-5">
-                <strong>Order ID:</strong> <span class="text-success">#{{ session('order_id') }}</span>
+                <strong>Order ID:</strong> <span class="text-dark">#{{ session('order_id') }}</span>
             </p>
         @endif
 

@@ -5,7 +5,7 @@
     <div class="page-header">
         <h1 class="page-title">Edit Shipping Charges</h1>
         <div class="page-actions">
-            <a href="{{ url('admin/shipping-charges') }}" class="btn btn-primary btn-sm">
+            <a href="{{ url('admin/edit-shipping-charges') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-arrow-left"></i> Back to List
             </a>
         </div>
@@ -43,107 +43,43 @@
     <!-- Shipping Charges Form -->
     <div class="card shadow-sm border">
         <div class="card-body p-4">
-            <form action="{{ url('admin/edit-shipping-charges/' . $shippingDetails['id']) }}" method="POST" class="needs-validation" novalidate>
+            <form action="{{ $shippingDetails['id'] ? url('admin/edit-shipping-charges/' . $shippingDetails['id']) : url('admin/add-shipping-charges') }}" method="POST" class="needs-validation" novalidate>
                 @csrf
 
                 <div class="row g-4">
-                    <!-- Left Column -->
-                    <div class="col-md-6">
-                        <div class="form-group mb-4">
-                            <label for="country">Country</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ $shippingDetails['country'] }}"
-                                readonly
-                            >
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label for="0_500g">Rate (0g - 500g)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                class="form-control @error('0_500g') is-invalid @enderror"
-                                id="0_500g"
-                                name="0_500g"
-                                placeholder="Enter rate for 0-500g"
-                                value="{{ old('0_500g', $shippingDetails['0_500g']) }}"
-                                required
-                            >
-                            <div class="invalid-feedback">
-                                @error('0_500g') {{ $message }} @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label for="501g_1000g">Rate (501g - 1000g)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                class="form-control @error('501g_1000g') is-invalid @enderror"
-                                id="501g_1000g"
-                                name="501g_1000g"
-                                placeholder="Enter rate for 501-1000g"
-                                value="{{ old('501g_1000g', $shippingDetails['501g_1000g']) }}"
-                                required
-                            >
-                            <div class="invalid-feedback">
-                                @error('501g_1000g') {{ $message }} @enderror
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Right Column -->
                     <div class="col-md-6">
                         <div class="form-group mb-4">
-                            <label for="1001_2000g">Rate (1001g - 2000g)</label>
+                            <label for="shipping_charge">Shipping Charge</label>
                             <input
                                 type="number"
                                 step="0.01"
-                                class="form-control @error('1001_2000g') is-invalid @enderror"
-                                id="1001_2000g"
-                                name="1001_2000g"
-                                placeholder="Enter rate for 1001-2000g"
-                                value="{{ old('1001_2000g', $shippingDetails['1001_2000g']) }}"
+                                class="form-control @error('shipping_charge') is-invalid @enderror"
+                                id="shipping_charge"
+                                name="shipping_charge"
+                                placeholder="Enter shipping charge"
+                                value="{{ old('shipping_charge', $shippingDetails['shipping_charge']) }}"
                                 required
                             >
                             <div class="invalid-feedback">
-                                @error('1001_2000g') {{ $message }} @enderror
+                                @error('shipping_charge') {{ $message }} @enderror
                             </div>
                         </div>
 
                         <div class="form-group mb-4">
-                            <label for="2001g_5000g">Rate (2001g - 5000g)</label>
+                            <label for="free_shipping_min_amount">Free Shipping Minimum Amount</label>
                             <input
                                 type="number"
                                 step="0.01"
-                                class="form-control @error('2001g_5000g') is-invalid @enderror"
-                                id="2001g_5000g"
-                                name="2001g_5000g"
-                                placeholder="Enter rate for 2001-5000g"
-                                value="{{ old('2001g_5000g', $shippingDetails['2001g_5000g']) }}"
+                                class="form-control @error('free_shipping_min_amount') is-invalid @enderror"
+                                id="free_shipping_min_amount"
+                                name="free_shipping_min_amount"
+                                placeholder="Enter minimum amount for free shipping"
+                                value="{{ old('free_shipping_min_amount', $shippingDetails['free_shipping_min_amount']) }}"
                                 required
                             >
                             <div class="invalid-feedback">
-                                @error('2001g_5000g') {{ $message }} @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label for="above_5000g">Rate (Above 5000g)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                class="form-control @error('above_5000g') is-invalid @enderror"
-                                id="above_5000g"
-                                name="above_5000g"
-                                placeholder="Enter rate for above 5000g"
-                                value="{{ old('above_5000g', $shippingDetails['above_5000g']) }}"
-                                required
-                            >
-                            <div class="invalid-feedback">
-                                @error('above_5000g') {{ $message }} @enderror
+                                @error('free_shipping_min_amount') {{ $message }} @enderror
                             </div>
                         </div>
                     </div>

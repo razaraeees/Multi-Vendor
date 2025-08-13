@@ -1,3 +1,5 @@
+
+
 <footer>
 			<section class="py-5 border-top bg-light">
 				<div class="container">
@@ -28,29 +30,17 @@
 							<div class="footer-section2">
 								<h5 class="mb-4 text-uppercase fw-bold">Categories</h5>
 								<ul class="list-unstyled">
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Jeans</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> T-Shirts</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Sports</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Shirts & Tops</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Clogs & Mules</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Sunglasses</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Bags & Wallets</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Sneakers & Athletic</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Electronis</a>
-									</li>
-									<li class="mb-1"><a href="javascript:;"><i class='bx bx-chevron-right'></i> Furniture</a>
-									</li>
+									@foreach ($categories as $main)
+										<li class="mb-1">
+											<a href="{{ url($main->url) }}">
+												<i class='bx bx-chevron-right'></i> {{ $main->category_name }}
+											</a>
+										</li>
+									@endforeach
 								</ul>
+
 							</div>
-						</div>
+						</div>	
 						<div class="col">
 							<div class="footer-section3">
 								<h5 class="mb-4 text-uppercase fw-bold">Popular Tags</h5>
